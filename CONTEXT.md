@@ -12,6 +12,8 @@
 
 [2026-09-20] Проблема: GitHub Actions после push завершился Startup failure, потому что аккаунт GitHub billing locked и требует обновления payment information → Решение: не менять платёжные данные и не включать платный runner без отдельного согласования; зафиксировать блокер, использовать только доступную бесплатную квоту или согласовать альтернативный бесплатный remote builder.
 
+[2026-09-20] Проблема: после перевода репозитория в public GitHub Actions quality job прошёл, но Docker build остановился на `vapoursynth==80`: PyTorch runtime Python ниже 3.12, а VapourSynth 80+ требует Python>=3.12 → Решение: определить ABI базового образа и выбрать совместимую комбинацию Python/VapourSynth/BM3D/BestSource, не удаляя обязательный V-BM3D стек.
+
 ## Правила
 
 - Docker на Mac не устанавливать, не запускать и не собирать.

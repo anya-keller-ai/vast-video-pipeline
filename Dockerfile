@@ -12,6 +12,7 @@ ARG FLOW_DENOISE_COMMIT=2748fb42a883dceefb7e667f8521e6a138d6817d
 ARG SEEDVR2_COMMIT=4490bd1f482e026674543386bb2a4d176da245b9
 ARG VIDEO_HELPER_COMMIT=4d907bee61e92c2e65af3bd6383a4e4d356126d1
 ARG HUGGINGFACE_HUB_VERSION=1.32.0
+ARG PYTHON_VERSION=3.12
 
 ENV DEBIAN_FRONTEND=noninteractive \
     COMFYUI_ROOT=/opt/ComfyUI \
@@ -33,6 +34,9 @@ RUN apt-get update \
         libfftw3-dev \
         pkg-config \
     && rm -rf /var/lib/apt/lists/*
+
+RUN /opt/conda/bin/conda install --yes "python=${PYTHON_VERSION}" \
+    && /opt/conda/bin/conda clean --all --yes
 
 RUN python -m pip install \
         --no-cache-dir \
