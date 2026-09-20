@@ -12,6 +12,7 @@ ARG FLOW_DENOISE_COMMIT=2748fb42a883dceefb7e667f8521e6a138d6817d
 ARG SEEDVR2_COMMIT=4490bd1f482e026674543386bb2a4d176da245b9
 ARG VIDEO_HELPER_COMMIT=4d907bee61e92c2e65af3bd6383a4e4d356126d1
 ARG HUGGINGFACE_HUB_VERSION=1.32.0
+ARG PYDANTIC_VERSION=2.12.5
 ARG PYTHON_VERSION=3.12
 
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -70,6 +71,7 @@ RUN set -eux; \
 RUN python -m pip install --no-cache-dir -r /opt/ComfyUI/requirements.txt \
     && python -m pip install --no-cache-dir -r /opt/ComfyUI/custom_nodes/ComfyUI-KJNodes/requirements.txt \
     && python -m pip install --no-cache-dir -r /opt/ComfyUI/custom_nodes/ComfyUI-SeedVR2_VideoUpscaler/requirements.txt \
+    && python -m pip install --no-cache-dir "pydantic==${PYDANTIC_VERSION}" \
     && python -m pip check
 
 COPY config /opt/vast/config

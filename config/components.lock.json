@@ -49,6 +49,7 @@
         "vapoursynth-bm3d": "10.1",
         "vapoursynth-bestsource": "22",
         "sageattention": "1.0.6",
-        "huggingface_hub": "1.32.0"
+        "huggingface_hub": "1.32.0",
+        "pydantic": "2.12.5"
     }
 }

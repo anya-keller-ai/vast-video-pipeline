@@ -14,6 +14,8 @@
 
 [2026-09-20] Проблема: после перевода репозитория в public GitHub Actions quality job прошёл, но Docker build остановился на `vapoursynth==80`: PyTorch runtime Python ниже 3.12, а VapourSynth 80+ требует Python>=3.12 → Решение: определить ABI базового образа и выбрать совместимую комбинацию Python/VapourSynth/BM3D/BestSource, не удаляя обязательный V-BM3D стек.
 
+[2026-09-20] Проблема: после установки Python 3.12 Docker build дошёл до `pip check`, но base package `conda-lockfiles 0.2.0` требует `pydantic>=2.12.5`, а зависимости ComfyUI оставили pydantic 2.11.10 → Решение: зафиксировать совместимую pydantic-версию после установки upstream requirements и повторить `pip check`.
+
 ## Правила
 
 - Docker на Mac не устанавливать, не запускать и не собирать.
