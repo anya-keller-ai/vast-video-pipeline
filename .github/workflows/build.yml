@@ -1,0 +1,103 @@
+name: Build and validate Vast video pipeline
+
+on:
+    pull_request:
+    push:
+        branches:
+            - main
+    workflow_dispatch:
+        inputs:
+            publish:
+                description: Publish the image to the private Docker Hub repository
+                required: true
+                default: false
+                type: boolean
+
+permissions:
+    contents: read
+
+env:
+    IMAGE_NAME: ${{ vars.DOCKER_USERNAME || 'anyakeller' }}/vast-video-pipeline
+
+jobs:
+    quality:
+        name: Static checks and tests
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+
+            - name: Set up Python
+              uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+              with:
+                  python-version: '3.12'
+
+            - name: Install Python check tools
+              run: python -m pip install --disable-pip-version-check --no-cache-dir ruff==0.16.8 pytest==8.4.2 mypy==1.17.1
+
+            - name: Install shell check tools
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install --yes --no-install-recommends shellcheck shfmt
+
+            - name: Validate JSON and Python
+              run: |
+                  python -m json.tool config/components.lock.json >/dev/null
+                  python -m json.tool config/models.lock.json >/dev/null
+                  python -m json.tool config/presets.json >/dev/null
+                  python -m json.tool workflows/01-text-to-video-24gb.json >/dev/null
+                  python -m json.tool workflows/flowdenoise-raft-example.json >/dev/null
+                  python -m json.tool workflows/seedvr2-sharp-video-example.json >/dev/null
+                  python -m compileall -q postprocess
+
+            - name: Lint and test Python
+              run: |
+                  ruff check postprocess tests
+                  ruff format --check postprocess tests
+                  mypy --strict postprocess
+                  pytest
+
+            - name: Check shell scripts
+              run: |
+                  bash -n scripts/*.sh
+                  shellcheck scripts/*.sh
+                  shfmt -d scripts/*.sh
+
+    container:
+        name: Build container
+        needs: quality
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+
+            - name: Set up Buildx
+              uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069
+
+            - name: Extract image metadata
+              id: metadata
+              uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302
+              with:
+                  images: ${{ env.IMAGE_NAME }}
+                  tags: |
+                      type=sha,prefix=sha-
+                      type=raw,value=latest,enable={{is_default_branch}}
+
+            - name: Log in to Docker Hub
+              if: github.event_name == 'workflow_dispatch' && inputs.publish == true
+              uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f
+              with:
+                  username: ${{ vars.DOCKER_USERNAME || 'anyakeller' }}
+                  password: ${{ secrets.DOCKER_PASSWORD }}
+
+            - name: Build image
+              uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc
+              with:
+                  context: .
+                  file: Dockerfile
+                  platforms: linux/amd64
+                  push: ${{ github.event_name == 'workflow_dispatch' && inputs.publish == true }}
+                  tags: ${{ steps.metadata.outputs.tags }}
+                  labels: ${{ steps.metadata.outputs.labels }}
+                  provenance: false
+                  sbom: false

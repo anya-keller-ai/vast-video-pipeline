@@ -1,0 +1,54 @@
+{
+    "schema_version": 1,
+    "base_image": {
+        "image": "pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime",
+        "digest": "sha256:c16f4c749e2d9e96878875cdf6cc45cddda1d1a36fddd371dd6f2360f1b6e2a2",
+        "platform": "linux/amd64"
+    },
+    "python": "3.12",
+    "components": {
+        "comfyui": {
+            "repository": "https://github.com/comfyanonymous/ComfyUI",
+            "commit": "5ba116a40f1944f64e2e4a8ace826656e6293bf4"
+        },
+        "multigpu": {
+            "repository": "https://github.com/pollockjj/ComfyUI-MultiGPU",
+            "commit": "b51c99a525e9607e43545ee2a8b7694c74a4775a"
+        },
+        "kj_nodes": {
+            "repository": "https://github.com/kijai/ComfyUI-KJNodes",
+            "commit": "d3cfe21625e5170126ce06fbfcfe1d88108688c3"
+        },
+        "h3_turbo": {
+            "repository": "https://github.com/Larryvrh/ComfyUI-MiniMax-H3-Turbo",
+            "commit": "4274783a23afcfdbea3b4876cb79effd6c510785"
+        },
+        "flow_denoise": {
+            "repository": "https://github.com/AIMZ-GFX/ComfyUI-FlowDenoise",
+            "commit": "2748fb42a883dceefb7e667f8521e6a138d6817d"
+        },
+        "seedvr2": {
+            "repository": "https://github.com/numz/ComfyUI-SeedVR2_VideoUpscaler",
+            "commit": "4490bd1f482e026674543386bb2a4d176da245b9"
+        },
+        "video_helper_suite": {
+            "repository": "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite",
+            "commit": "4d907bee61e92c2e65af3bd6383a4e4d356126d1"
+        },
+        "bm3d": {
+            "repository": "https://github.com/HomeOfVapourSynthEvolution/VapourSynth-BM3D",
+            "commit": "5377821483b5960c6b009d92c052676dd4b8f82e"
+        },
+        "h3_24gb_workflow": {
+            "repository": "https://github.com/Ajay9o9/minimax-h3-30series",
+            "commit": "e5e499454552119aea86f6b7b62596a529826a36"
+        }
+    },
+    "python_packages": {
+        "vapoursynth": "80",
+        "vapoursynth-bm3d": "10.1",
+        "vapoursynth-bestsource": "22",
+        "sageattention": "1.0.6",
+        "huggingface_hub": "1.32.0"
+    }
+}

@@ -1,0 +1,25 @@
+[project]
+name = "vast-video-pipeline"
+version = "0.1.0"
+description = "Reference-based video restoration helpers for a Vast.ai ComfyUI runtime"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+addopts = "-q"
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unused_configs = true
