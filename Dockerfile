@@ -77,6 +77,7 @@ RUN python -m pip install --no-cache-dir -r /opt/ComfyUI/requirements.txt \
 COPY config /opt/vast/config
 COPY scripts /opt/vast/scripts
 COPY postprocess /opt/vast/postprocess
+COPY postprocess/h3_staged_latent.py /opt/ComfyUI/custom_nodes/h3_staged_latent.py
 COPY workflows /opt/vast/workflows
 COPY README.md /opt/vast/README.md
 COPY CONTEXT.md /opt/vast/CONTEXT.md

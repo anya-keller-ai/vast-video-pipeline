@@ -1,0 +1,818 @@
+{
+  "id": "1fd2e8e1-2f9d-4a25-a13b-8c6b9d3f8c11",
+  "revision": 0,
+  "last_node_id": 21,
+  "last_link_id": 16,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "UNETLoaderDisTorch2MultiGPU",
+      "pos": [
+        40,
+        60
+      ],
+      "size": [
+        400,
+        200
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            1
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "UNETLoaderDisTorch2MultiGPU"
+      },
+      "widgets_values": [
+        "minimax_h3_fl2va_pruned_int4_convrot.safetensors",
+        "default",
+        "cuda:0",
+        0.0,
+        "cpu",
+        "cuda:0,12gb;cpu,*",
+        true
+      ],
+      "title": "Diffusion model -> Q4 + RAM [1344x768]",
+      "color": "#223",
+      "bgcolor": "#223"
+    },
+    {
+      "id": 2,
+      "type": "CLIPLoaderDisTorch2MultiGPU",
+      "pos": [
+        40,
+        300
+      ],
+      "size": [
+        400,
+        200
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            5
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPLoaderDisTorch2MultiGPU"
+      },
+      "widgets_values": [
+        "qwen3vl_32b_minimax_h3_int4_convrot.safetensors",
+        "minimax",
+        "cuda:0",
+        0.0,
+        "cpu",
+        "cuda:0,8gb;cpu,*",
+        false
+      ],
+      "title": "Q4 text encoder -> cuda:0 + RAM",
+      "color": "#223",
+      "bgcolor": "#223"
+    },
+    {
+      "id": 3,
+      "type": "VAELoaderMultiGPU",
+      "pos": [
+        40,
+        540
+      ],
+      "size": [
+        400,
+        90
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [
+            6,
+            14
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAELoaderMultiGPU"
+      },
+      "widgets_values": [
+        "minimax_h3_video_vae_fp16.safetensors",
+        "cuda:0"
+      ],
+      "title": "Video VAE -> cuda:0",
+      "color": "#223",
+      "bgcolor": "#223"
+    },
+    {
+      "id": 5,
+      "type": "PathchSageAttentionKJ",
+      "pos": [
+        490,
+        60
+      ],
+      "size": [
+        330,
+        90
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 1
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            2
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PathchSageAttentionKJ"
+      },
+      "widgets_values": [
+        "auto",
+        false
+      ],
+      "title": "SageAttention"
+    },
+    {
+      "id": 6,
+      "type": "MiniMaxH3TurboLoRA",
+      "pos": [
+        490,
+        190
+      ],
+      "size": [
+        330,
+        130
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 2
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            3,
+            4
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MiniMaxH3TurboLoRA"
+      },
+      "widgets_values": [
+        "minimax_h3_turbo_v4_step600_ema.safetensors",
+        1.0,
+        true
+      ],
+      "title": "Turbo LoRA (8 steps)",
+      "color": "#232",
+      "bgcolor": "#232"
+    },
+    {
+      "id": 7,
+      "type": "MiniMaxH3ImageToVideo",
+      "pos": [
+        870,
+        60
+      ],
+      "size": [
+        520,
+        420
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 5
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 6
+        },
+        {
+          "name": "first_frame",
+          "type": "IMAGE",
+          "link": 16,
+          "shape": 7
+        },
+        {
+          "name": "last_frame",
+          "type": "IMAGE",
+          "link": null,
+          "shape": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "positive",
+          "type": "positive",
+          "links": [
+            7
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            8
+          ],
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MiniMaxH3ImageToVideo"
+      },
+      "widgets_values": [
+        "Cinematic photorealistic live-action superhero battle, horizontal 16:9, matching the supplied initial reference frame exactly in composition, subject placement, scale, lighting and color palette. A devastated city avenue at sunset: shattered high-rise buildings, a collapsed elevated roadway, wrecked cars, broken asphalt and rubble, smoke columns and scattered fires under dramatic orange and blue storm clouds. On the left, an original female armored superhuman with short dark hair hovers above the rubble in a dark metallic blue-black suit and flowing black cape; vivid blue electricity wraps her armor and radiates from her open hand. On the right, an original muscular dark-haired male armored superhuman stands in a wide fighting stance in a black combat suit with red armor accents; red energy crackles around both fists and forearms. Preserve the two-character composition, silhouettes, armor design, blue-versus-red energy contrast and ruined-city background from the initial reference. Make the fight dynamic immediately: the hovering blue-energy fighter surges forward with a fast aerial feint and lightning strike, the red-energy fighter pivots, lunges and answers with rapid heavy punches, blue lightning and red energy collide, rubble lifts, sparks and dust burst outward, capes and smoke whip in the shockwave. Use a cinematic push-in with a subtle handheld impact shake and clear readable full-body motion, continuous shot, no cuts, no gore, no dialogue, no text, no logos, no extra characters, no anatomy distortion, no duplicated limbs, no costume changes, no flicker and no smeared faces.",
+        1344,
+        768,
+        124
+      ],
+      "title": "Prompt + AV latent — detailed superhero action (1344x768, 5.2s)",
+      "color": "#232",
+      "bgcolor": "#232"
+    },
+    {
+      "id": 8,
+      "type": "BasicGuider",
+      "pos": [
+        1440,
+        60
+      ],
+      "size": [
+        300,
+        70
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 3
+        },
+        {
+          "name": "conditioning",
+          "type": "CONDITIONING",
+          "link": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "GUIDER",
+          "type": "GUIDER",
+          "links": [
+            10
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "BasicGuider"
+      },
+      "widgets_values": [],
+      "title": "Guider (no CFG)"
+    },
+    {
+      "id": 9,
+      "type": "BasicScheduler",
+      "pos": [
+        1440,
+        180
+      ],
+      "size": [
+        300,
+        130
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 4
+        }
+      ],
+      "outputs": [
+        {
+          "name": "SIGMAS",
+          "type": "SIGMAS",
+          "links": [
+            12
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "BasicScheduler"
+      },
+      "widgets_values": [
+        "simple",
+        8,
+        1.0
+      ],
+      "title": "Schedule: 8 steps"
+    },
+    {
+      "id": 10,
+      "type": "MiniMaxH3TurboSampler",
+      "pos": [
+        1440,
+        350
+      ],
+      "size": [
+        300,
+        60
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "SAMPLER",
+          "type": "SAMPLER",
+          "links": [
+            11
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MiniMaxH3TurboSampler"
+      },
+      "widgets_values": [],
+      "title": "Turbo sampler (required)"
+    },
+    {
+      "id": 11,
+      "type": "RandomNoise",
+      "pos": [
+        1440,
+        450
+      ],
+      "size": [
+        300,
+        90
+      ],
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "NOISE",
+          "type": "NOISE",
+          "links": [
+            9
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "RandomNoise"
+      },
+      "widgets_values": [
+        0,
+        "randomize"
+      ],
+      "title": "Seed"
+    },
+    {
+      "id": 12,
+      "type": "SamplerCustomAdvanced",
+      "pos": [
+        1790,
+        60
+      ],
+      "size": [
+        300,
+        160
+      ],
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "noise",
+          "type": "NOISE",
+          "link": 9
+        },
+        {
+          "name": "guider",
+          "type": "GUIDER",
+          "link": 10
+        },
+        {
+          "name": "sampler",
+          "type": "SAMPLER",
+          "link": 11
+        },
+        {
+          "name": "sigmas",
+          "type": "SIGMAS",
+          "link": 12
+        },
+        {
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": 8
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "type": "output",
+          "links": [
+            13,
+            15
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "denoised_output",
+          "type": "denoised_output",
+          "links": [],
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "SamplerCustomAdvanced"
+      },
+      "widgets_values": [],
+      "title": "Sample"
+    },
+    {
+      "id": 16,
+      "type": "SaveH3StagedLatent",
+      "pos": [
+        1790,
+        300
+      ],
+      "size": [
+        320,
+        100
+      ],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "link": 13
+        }
+      ],
+      "outputs": [
+        {
+          "name": "filename",
+          "type": "STRING",
+          "links": [],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "SaveH3StagedLatent"
+      },
+      "widgets_values": [
+        "h3/q4-1344-latent"
+      ],
+      "title": "Save staged H3 video/audio latent",
+      "color": "#232",
+      "bgcolor": "#232"
+    },
+    {
+      "id": 17,
+      "type": "MarkdownNote",
+      "pos": [
+        870,
+        520
+      ],
+      "size": [
+        520,
+        500
+      ],
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "title": "Read me first",
+      "properties": {},
+      "widgets_values": [
+        "**Staged H3 workflow with one initial reference frame.**\n\nLoad `h3_superhero_reference_start.png` and connect it only to `first_frame`; `last_frame` is intentionally empty.\n\nRun this graph first. It samples 1344x768 H3 and saves the nested video/audio latent. Then run the final FlowDenoise → V-BM3D → SeedVR2 flow and save every result.\n\nThe custom `SaveH3StagedLatent` node stores the two nested tensors separately; do not replace it with stock `SaveLatent`.\n\nThe prompt describes only the supplied initial reference: a ruined city, a blue-energy armored woman on the left and a red-energy armored man on the right. The action is dynamic but keeps this composition and the two original characters."
+      ],
+      "color": "#432",
+      "bgcolor": "#653"
+    },
+    {
+      "id": 18,
+      "type": "MarkdownNote",
+      "pos": [
+        1440,
+        570
+      ],
+      "size": [
+        420,
+        400
+      ],
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "title": "Turbo LoRA",
+      "properties": {},
+      "widgets_values": [
+        "## 4-step Turbo LoRA\n\nSampling runs in 4 steps instead of 20.\n\n**Leave `low_vram` ON.** It is not a memory setting despite the name: on, the LoRA\ndelta is folded into the weights once at load; off, it applies as a hook on every\npass. On a quantised base the folded path is the one that keeps skin clean.\n\n**The custom sampler is required.** Video and audio inside H3 follow two different\nflow schedules. A stock sampler oversteps the audio at 4 steps and breaks it.\n\n**Close-up faces are this LoRA's weak point.** These are preview weights and skin\ncan go plastic at close range. For close-ups, bypass the LoRA node (Ctrl+B), set\nsteps to 20, and swap the sampler input to a KSamplerSelect."
+      ],
+      "color": "#432",
+      "bgcolor": "#653"
+    },
+    {
+      "id": 19,
+      "type": "LoadImage",
+      "pos": [
+        40,
+        850
+      ],
+      "size": [
+        315,
+        314
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            14
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [],
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "h3_superhero_reference_start.png"
+      ],
+      "title": "Reference initial frame"
+    },
+    {
+      "id": 21,
+      "type": "ImageScale",
+      "pos": [
+        400,
+        850
+      ],
+      "size": [
+        315,
+        170
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 14
+        },
+        {
+          "name": "upscale_method",
+          "type": "COMBO",
+          "widget": {
+            "name": "upscale_method"
+          },
+          "link": null
+        },
+        {
+          "name": "width",
+          "type": "INT",
+          "widget": {
+            "name": "width"
+          },
+          "link": null
+        },
+        {
+          "name": "height",
+          "type": "INT",
+          "widget": {
+            "name": "height"
+          },
+          "link": null
+        },
+        {
+          "name": "crop",
+          "type": "COMBO",
+          "widget": {
+            "name": "crop"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            16
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ImageScale"
+      },
+      "widgets_values": [
+        "lanczos",
+        1344,
+        768,
+        "disabled"
+      ],
+      "title": "Scale initial reference to 1344x768"
+    }
+  ],
+  "links": [
+    [
+      1,
+      1,
+      0,
+      5,
+      0,
+      "MODEL"
+    ],
+    [
+      2,
+      5,
+      0,
+      6,
+      0,
+      "MODEL"
+    ],
+    [
+      3,
+      6,
+      0,
+      8,
+      0,
+      "MODEL"
+    ],
+    [
+      4,
+      6,
+      0,
+      9,
+      0,
+      "MODEL"
+    ],
+    [
+      5,
+      2,
+      0,
+      7,
+      0,
+      "CLIP"
+    ],
+    [
+      6,
+      3,
+      0,
+      7,
+      1,
+      "VAE"
+    ],
+    [
+      7,
+      7,
+      0,
+      8,
+      1,
+      "positive"
+    ],
+    [
+      8,
+      7,
+      1,
+      12,
+      4,
+      "LATENT"
+    ],
+    [
+      9,
+      11,
+      0,
+      12,
+      0,
+      "NOISE"
+    ],
+    [
+      10,
+      8,
+      0,
+      12,
+      1,
+      "GUIDER"
+    ],
+    [
+      11,
+      10,
+      0,
+      12,
+      2,
+      "SAMPLER"
+    ],
+    [
+      12,
+      9,
+      0,
+      12,
+      3,
+      "SIGMAS"
+    ],
+    [
+      13,
+      12,
+      0,
+      16,
+      0,
+      "output"
+    ],
+    [
+      14,
+      19,
+      0,
+      21,
+      0,
+      "IMAGE"
+    ],
+    [
+      16,
+      21,
+      0,
+      7,
+      2,
+      "IMAGE"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {},
+  "version": 0.4
+}

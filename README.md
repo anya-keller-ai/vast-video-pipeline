@@ -68,6 +68,10 @@ hf auth login
 ## Workflow
 
 - `workflows/01-text-to-video-24gb.json` — H3 на 24 GB, адаптированный под v4 Turbo.
+- `workflows/02-text-to-video-1344-q4-tiled.json` — первый staged-run: Q4 H3 4-step sampling на 1344x768 с сохранением video/audio latent.
+- `workflows/02-text-to-video-1344-q4-8step-staged.json` — staged-run для 8-step Turbo sampling на 1344x768.
+- `workflows/03-h3-staged-video-audio-decode.json` — второй staged-run: tiled video VAE, audio VAE и mux в MP4 с lossless H.264 CRF 0.
+- `postprocess/h3_staged_latent.py` — custom nodes `SaveH3StagedLatent`/`LoadH3StagedLatent`; stock `SaveLatent` не подходит NestedTensor H3.
 - `workflows/flowdenoise-raft-example.json` — пример FlowDenoise.
 - `workflows/seedvr2-sharp-video-example.json` — пример SeedVR2.
 - `postprocess/vbm3d_pipeline.py` — безопасный reference-based V-BM3D: сначала сверяет resolution/FPS/frame count, затем запускает lossless FFV1.

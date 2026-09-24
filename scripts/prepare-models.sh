@@ -28,8 +28,8 @@ command -v sha256sum >/dev/null 2>&1 || {
 }
 
 export HF_HUB_DOWNLOAD_TIMEOUT=${HF_HUB_DOWNLOAD_TIMEOUT:-120}
-export HF_XET_CACHE=${HF_XET_CACHE:-"$cache_root/xet"}
-mkdir -p "$HF_XET_CACHE"
+# Hugging Face CLI 1.32 rejects HF_HOME/HF_XET_CACHE together with --local-dir.
+unset HF_HOME HF_XET_CACHE
 
 if [[ ! -f "$manifest_path" ]]; then
 	echo "ERROR: model manifest does not exist: $manifest_path" >&2
@@ -96,8 +96,7 @@ for entry in "${entries[@]}"; do
 
 	echo "GET  $model_id"
 	hf download "$repository" "$source" \
-		--local-dir "$staging_root" \
-		--cache-dir "$cache_root"
+		--local-dir "$staging_root"
 
 	if [[ ! -f "$staging_path" ]]; then
 		echo "ERROR: Hugging Face did not produce $staging_path" >&2

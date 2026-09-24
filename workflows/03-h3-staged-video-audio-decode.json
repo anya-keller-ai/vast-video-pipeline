@@ -1,0 +1,429 @@
+{
+  "id": "8ecbff6e-9f7d-4d75-94c5-8e4f2f9c9b18",
+  "revision": 0,
+  "last_node_id": 19,
+  "last_link_id": 8,
+  "nodes": [
+    {
+      "id": 19,
+      "type": "LoadH3StagedLatent",
+      "pos": [
+        40,
+        400
+      ],
+      "size": [
+        360,
+        100
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "filename",
+          "type": [
+            "COMBO",
+            "STRING"
+          ],
+          "widget": {
+            "name": "filename"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "video_samples",
+          "type": "LATENT",
+          "links": [
+            2
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "audio_samples",
+          "type": "LATENT",
+          "links": [
+            4
+          ],
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadH3StagedLatent"
+      },
+      "widgets_values": [
+        "h3/q4-1344-latent_00001.h3latent.pt"
+      ],
+      "title": "Load staged H3 video/audio latent",
+      "color": "#232",
+      "bgcolor": "#232"
+    },
+    {
+      "id": 3,
+      "type": "VAELoaderMultiGPU",
+      "pos": [
+        40,
+        80
+      ],
+      "size": [
+        400,
+        90
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [
+            6,
+            14
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAELoaderMultiGPU"
+      },
+      "widgets_values": [
+        "minimax_h3_video_vae_fp16.safetensors",
+        "cuda:0"
+      ],
+      "title": "Video VAE -> CUDA",
+      "color": "#223",
+      "bgcolor": "#223"
+    },
+    {
+      "id": 4,
+      "type": "VAELoaderMultiGPU",
+      "pos": [
+        40,
+        210
+      ],
+      "size": [
+        400,
+        90
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [
+            16
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAELoaderMultiGPU"
+      },
+      "widgets_values": [
+        "minimax_h3_audio_vae_fp32.safetensors",
+        "cuda:0"
+      ],
+      "title": "Audio VAE -> CUDA",
+      "color": "#223",
+      "bgcolor": "#223"
+    },
+    {
+      "id": 13,
+      "type": "VAEDecodeTiled",
+      "pos": [
+        430,
+        80
+      ],
+      "size": [
+        320,
+        130
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "link": 2
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 3
+        },
+        {
+          "name": "tile_size",
+          "type": "INT",
+          "widget": {
+            "name": "tile_size"
+          },
+          "link": null
+        },
+        {
+          "name": "overlap",
+          "type": "INT",
+          "widget": {
+            "name": "overlap"
+          },
+          "link": null
+        },
+        {
+          "name": "temporal_size",
+          "type": "INT",
+          "widget": {
+            "name": "temporal_size"
+          },
+          "link": null
+        },
+        {
+          "name": "temporal_overlap",
+          "type": "INT",
+          "widget": {
+            "name": "temporal_overlap"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            6
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAEDecodeTiled"
+      },
+      "widgets_values": [
+        512,
+        64,
+        16,
+        4
+      ],
+      "title": "Decode staged video tiled (512px / 16f)"
+    },
+    {
+      "id": 14,
+      "type": "VAEDecodeAudio",
+      "pos": [
+        430,
+        280
+      ],
+      "size": [
+        280,
+        70
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "link": 4
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 5
+        }
+      ],
+      "outputs": [
+        {
+          "name": "AUDIO",
+          "type": "AUDIO",
+          "links": [
+            18
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAEDecodeAudio"
+      },
+      "widgets_values": [],
+      "title": "Decode staged audio"
+    },
+    {
+      "id": 15,
+      "type": "CreateVideo",
+      "pos": [
+        820,
+        150
+      ],
+      "size": [
+        280,
+        110
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 6
+        },
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "link": 7,
+          "shape": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "VIDEO",
+          "type": "VIDEO",
+          "links": [
+            19
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CreateVideo"
+      },
+      "widgets_values": [
+        24.0,
+        8
+      ],
+      "title": "Mux staged H3 at 24 fps"
+    },
+    {
+      "id": 16,
+      "type": "SaveVideo",
+      "pos": [
+        1180,
+        150
+      ],
+      "size": [
+        320,
+        210
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "video",
+          "type": "VIDEO",
+          "link": 8
+        }
+      ],
+      "outputs": [
+        {
+          "name": "video",
+          "type": "video",
+          "links": [],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "SaveVideo"
+      },
+      "widgets_values": [
+        "h3/q4-staged-1344x768-crf0",
+        "mp4",
+        "h264",
+        "re-encode",
+        0.0
+      ],
+      "title": "Save staged H3 1344x768 — H.264 CRF 0"
+    },
+    {
+      "id": 17,
+      "type": "MarkdownNote",
+      "pos": [
+        820,
+        360
+      ],
+      "size": [
+        640,
+        300
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "properties": {},
+      "widgets_values": [
+        "# H3 staged decode\n\nSelect the `.h3latent.pt` produced by the sampling workflow.\n\nVideo decode uses 512px spatial tiles with 16-frame temporal tiles.\nSampling, video VAE, audio VAE and muxing are intentionally separate\nexecution stages so the 1344x768 result does not reset ComfyUI.\n\nSaveVideo is explicit lossless H.264 re-encode with CRF 0; do not use\n`auto`, which produced an unnecessarily low bitrate.\n\nExpected result: 1344x768, 124 frames, 24 fps, synchronised stereo AAC."
+      ],
+      "color": "#432",
+      "bgcolor": "#653"
+    }
+  ],
+  "links": [
+    [
+      2,
+      19,
+      0,
+      13,
+      0,
+      "LATENT"
+    ],
+    [
+      3,
+      3,
+      0,
+      13,
+      1,
+      "VAE"
+    ],
+    [
+      4,
+      19,
+      1,
+      14,
+      0,
+      "LATENT"
+    ],
+    [
+      5,
+      4,
+      0,
+      14,
+      1,
+      "VAE"
+    ],
+    [
+      6,
+      13,
+      0,
+      15,
+      0,
+      "IMAGE"
+    ],
+    [
+      7,
+      14,
+      0,
+      15,
+      1,
+      "AUDIO"
+    ],
+    [
+      8,
+      15,
+      0,
+      16,
+      0,
+      "VIDEO"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {},
+  "version": 0.4
+}
