@@ -39,6 +39,13 @@ import {
     H3_OUTPUT_WIDTH,
     h3GeneratedDurationSeconds,
     h3FrameCountForDuration,
+    isNegativeInputValid,
+    NEGATIVE_DEFAULT_STRENGTH,
+    NEGATIVE_MAX_CHARS,
+    NEGATIVE_MAX_STRENGTH,
+    NEGATIVE_MIN_STRENGTH,
+    negativeInputError,
+    negativePromptError,
 } from './h3-generation'
 import type { H3Resolution } from './h3-generation'
 import { createDemoWebM } from './mock-video'
@@ -268,6 +275,8 @@ function App() {
     const [referenceImages, setReferenceImages] = createSignal<File[]>([])
     const [referenceAudios, setReferenceAudios] = createSignal<File[]>([])
     const [generationPrompt, setGenerationPrompt] = createSignal('')
+    const [negativePrompt, setNegativePrompt] = createSignal('')
+    const [negativeStrength, setNegativeStrength] = createSignal<number>(NEGATIVE_DEFAULT_STRENGTH)
     const [generationDuration, setGenerationDuration] = createSignal<number>(H3_DURATION_OPTIONS[0]?.seconds ?? 0)
     const [generationResolution, setGenerationResolution] = createSignal<H3Resolution>('standard')
     const [refImageSize, setRefImageSize] = createSignal<'match' | 'max'>('match')
@@ -602,6 +611,7 @@ function App() {
         const generatedDuration = h3GeneratedDurationSeconds(requestedDuration)
         if (!isPromptValid(generationPrompt())
             || generatedDuration === null
+            || (realConnection() && !isNegativeInputValid(negativePrompt(), negativeStrength()))
             || generationJob().status === 'running') {
             return
         }
@@ -621,6 +631,8 @@ function App() {
                     resolution: generationResolution(),
                     seed: Math.floor(Math.random() * Number.MAX_SAFE_INTEGER),
                     refImageSize: refImageSize(),
+                    negativePrompt: negativePrompt(),
+                    negativeStrength: negativeStrength(),
                 }, 'generation')
                 return
             }
@@ -633,6 +645,8 @@ function App() {
                 durationSeconds: requestedDuration,
                 resolution: generationResolution(),
                 turboLora: turboLoraEnabled(),
+                negativePrompt: negativePrompt(),
+                negativeStrength: negativeStrength(),
             }, 'generation')
             return
         }
@@ -799,6 +813,10 @@ function App() {
                                                     referenceAudios={referenceAudios()}
                                                     generationAudioError={generationAudioError()}
                                                     generationPrompt={generationPrompt()}
+                                                    negativePrompt={negativePrompt()}
+                                                    negativeStrength={negativeStrength()}
+                                                    onNegativePrompt={setNegativePrompt}
+                                                    onNegativeStrength={setNegativeStrength}
                                                     generationDuration={generationDuration()}
                                                     generationResolution={generationResolution()}
                                                     generationVariant={isGenerationFamily() ? activeFamily() as GenerationVariant : 'h3'}
@@ -1033,6 +1051,10 @@ interface StudioProps {
     onReferenceAudios: (files: File[]) => void
     onRemoveReferenceAudio: (file: File) => void
     generationPrompt: string
+    negativePrompt: string
+    negativeStrength: number
+    onNegativePrompt: (text: string) => void
+    onNegativeStrength: (strength: number) => void
     generationDuration: number
     generationResolution: H3Resolution
     generationVariant: GenerationVariant
@@ -1096,6 +1118,7 @@ function Studio(props: StudioProps) {
     }
     const generationCanRun = () => props.blockedReason === null
         && isPromptValid(props.generationPrompt)
+        && (!props.realConnection || isNegativeInputValid(props.negativePrompt, props.negativeStrength))
         && h3FrameCountForDuration(props.generationDuration) !== null
         && !props.isGenerationRunning
     const upscaleCanRun = () => props.upscaleVideo !== null && !props.isUpscaleRunning
@@ -1296,6 +1319,42 @@ function Studio(props: StudioProps) {
                                     {props.realConnection ? 'Промт обязателен. Обращайся к референсам как <Picture 1>, <Video 1> и далее по порядку.' : 'Промт обязателен. В mock-режиме он только попадёт в демо-кадр.'}
                                 </p>
                             </div>
+                            <Show when={props.realConnection}>
+                                <div class="field-group negative-field">
+                                    <label class="field-label" for="negative-prompt">Негативный промт (необязательно)</label>
+                                    <input
+                                        id="negative-prompt"
+                                        class="prompt-input negative-input"
+                                        type="text"
+                                        value={props.negativePrompt}
+                                        onInput={(event) => {
+                                            props.onNegativePrompt(event.currentTarget.value)
+                                            props.onGenerationPromptEdited()
+                                        }}
+                                        placeholder="Например: красное платье, надписи в кадре"
+                                        maxlength={NEGATIVE_MAX_CHARS}
+                                        disabled={props.isGenerationRunning}
+                                        aria-describedby="negative-prompt-help"
+                                        aria-invalid={negativePromptError(props.negativePrompt) !== null}
+                                    />
+                                    <label class="field-label" for="negative-strength">Сила негатива</label>
+                                    <input
+                                        id="negative-strength"
+                                        class="prompt-input negative-input negative-input--number"
+                                        type="number"
+                                        min={NEGATIVE_MIN_STRENGTH}
+                                        max={NEGATIVE_MAX_STRENGTH}
+                                        step="0.5"
+                                        value={props.negativeStrength}
+                                        onInput={(event) => props.onNegativeStrength(event.currentTarget.valueAsNumber)}
+                                        disabled={props.isGenerationRunning}
+                                        aria-describedby="negative-prompt-help"
+                                    />
+                                    <p id="negative-prompt-help" class="field-help" role={negativeInputError(props.negativePrompt, props.negativeStrength) === null ? undefined : 'alert'}>
+                                        {negativeInputError(props.negativePrompt, props.negativeStrength) ?? `NegPiP вычитает понятие из результата. Пиши 2–4 слова через запятую; сила ${NEGATIVE_MIN_STRENGTH}–${NEGATIVE_MAX_STRENGTH}, по умолчанию ${NEGATIVE_DEFAULT_STRENGTH}. Если эффект слабый, повысь силу или переформулируй.`}
+                                    </p>
+                                </div>
+                            </Show>
                         </div>
 
                         <fieldset class="generation-settings" disabled={props.isGenerationRunning}>

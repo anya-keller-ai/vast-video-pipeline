@@ -797,6 +797,21 @@ input:focus-visible,
     transition: border-color 140ms var(--ease-out), box-shadow 140ms var(--ease-out);
 }
 
+.negative-field {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.negative-input {
+    min-height: 0;
+    resize: none;
+    padding-block: 0.55rem;
+}
+
+.negative-input--number {
+    max-width: 8rem;
+}
+
 .prompt-input::placeholder {
     color: #969b93;
 }

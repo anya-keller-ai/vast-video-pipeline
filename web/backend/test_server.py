@@ -11,6 +11,7 @@ from aiohttp.test_utils import TestClient, TestServer
 
 from .config import Settings
 from .models import ModelSpec
+from .negpip import NO_NEGATIVE, NegativePrompt
 from .server import JOBS_KEY, MODEL_BUNDLES_KEY, READINESS_KEY, create_app
 
 
@@ -127,8 +128,46 @@ class ServerTests(unittest.IsolatedAsyncioTestCase):
             )
         self.assertEqual(response.status, 202)
         start.assert_awaited_once_with(
-            "<Picture 1>", ["one", "two"], "motion", 5.0, 42, "max", ["voice"], "draft"
+            "<Picture 1>",
+            ["one", "two"],
+            "motion",
+            5.0,
+            42,
+            "max",
+            ["voice"],
+            "draft",
+            NO_NEGATIVE,
         )
+
+    async def test_negative_prompt_reaches_manager_and_is_validated(self) -> None:
+        manager = self.client.app[JOBS_KEY]
+        start = AsyncMock(return_value={"id": "abc", "status": "queued"})
+        body: dict[str, object] = {
+            "mode": "generation",
+            "prompt": "scene",
+            "referenceImageIds": [],
+            "durationSeconds": 5.0,
+            "turboLora": False,
+            "negativePrompt": "red dress, clothes",
+            "negativeStrength": 2.5,
+        }
+        with patch.object(manager, "start_generation", start):
+            response = await self.client.post("/api/jobs", json=body)
+            self.assertEqual(response.status, 202)
+            self.assertEqual(
+                start.await_args.args[-1], NegativePrompt("red dress, clothes", 2.5)
+            )
+            for update in (
+                {"negativePrompt": 5},
+                {"negativePrompt": "(a:-9)"},
+                {"negativeStrength": 99},
+                {"negativeStrength": "3"},
+                {"negativeStrength": True},
+            ):
+                with self.subTest(update=update):
+                    bad = await self.client.post("/api/jobs", json={**body, **update})
+                    self.assertEqual(bad.status, 400)
+        self.assertEqual(start.await_count, 1)
 
     async def test_cancel_endpoint_calls_manager(self) -> None:
         manager = self.client.app[JOBS_KEY]
@@ -164,6 +203,7 @@ class ServerTests(unittest.IsolatedAsyncioTestCase):
             False,
             ["voice", "music"],
             "draft",
+            NO_NEGATIVE,
         )
 
     async def test_rejects_invalid_generation_duration_and_turbo_type(self) -> None:

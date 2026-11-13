@@ -29,6 +29,7 @@ from .frame_interpolation import (
 )
 from .media import normalize_reference_video, probe_video
 from .model_bundles import ModelBundleManager
+from .negpip import NO_NEGATIVE, NegativePrompt
 from .pika import PIKA_SAVE_NODE_ID, build_pika_ref2va_prompt
 from .readiness import ReadinessManager
 from .uploads import UploadedFile, UploadStore
@@ -120,6 +121,7 @@ class JobManager:
         use_turbo_lora: bool,
         reference_audio_ids: list[str] | None = None,
         resolution: str = H3_DEFAULT_RESOLUTION,
+        negative: NegativePrompt = NO_NEGATIVE,
     ) -> dict[str, object]:
         async with self._submit_lock:
             return await self._start_generation(
@@ -130,6 +132,7 @@ class JobManager:
                 use_turbo_lora,
                 reference_audio_ids,
                 resolution,
+                negative,
             )
 
     async def _start_generation(
@@ -141,6 +144,7 @@ class JobManager:
         use_turbo_lora: bool,
         reference_audio_ids: list[str] | None = None,
         resolution: str = H3_DEFAULT_RESOLUTION,
+        negative: NegativePrompt = NO_NEGATIVE,
     ) -> dict[str, object]:
         bundle_id = "h3_turbo" if use_turbo_lora else "h3_base"
         await self._require_ready(bundle_id)
@@ -201,6 +205,7 @@ class JobManager:
                 secrets.randbits(64),
                 reference_audios=[audio.filename for audio in audios],
                 resolution=resolution,
+                negative=negative,
             )
             return await self._submit(
                 job_id,
@@ -224,6 +229,7 @@ class JobManager:
         ref_image_size: str = "match",
         reference_audio_ids: list[str] | None = None,
         resolution: str = H3_DEFAULT_RESOLUTION,
+        negative: NegativePrompt = NO_NEGATIVE,
     ) -> dict[str, object]:
         async with self._submit_lock:
             return await self._start_pika_generation(
@@ -235,6 +241,7 @@ class JobManager:
                 ref_image_size,
                 reference_audio_ids,
                 resolution,
+                negative,
             )
 
     async def _start_pika_generation(
@@ -247,6 +254,7 @@ class JobManager:
         ref_image_size: str = "match",
         reference_audio_ids: list[str] | None = None,
         resolution: str = H3_DEFAULT_RESOLUTION,
+        negative: NegativePrompt = NO_NEGATIVE,
     ) -> dict[str, object]:
         bundle_id = "pika_h3_flex_ref2va"
         await self._require_ready(bundle_id)
@@ -297,6 +305,7 @@ class JobManager:
                     ref_image_size,
                     reference_audios=[audio.filename for audio in audios],
                     resolution=resolution,
+                    negative=negative,
                 )
             except ValueError as error:
                 raise JobRequestError(str(error)) from error

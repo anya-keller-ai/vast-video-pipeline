@@ -6,7 +6,33 @@ import {
     H3_DURATION_OPTIONS,
     h3FrameCountForDuration,
     h3GeneratedDurationSeconds,
+    isNegativeInputValid,
+    NEGATIVE_MAX_CHARS,
+    negativeInputError,
 } from './h3-generation'
+
+describe('negative prompt validation', () => {
+    it('treats an empty negative prompt as disabled whatever the strength is', () => {
+        expect(isNegativeInputValid('', Number.NaN)).toBe(true)
+        expect(isNegativeInputValid('   ', 99)).toBe(true)
+    })
+
+    it('accepts a plain phrase with a strength inside the allowed range', () => {
+        expect(isNegativeInputValid('red dress, clothes', 3)).toBe(true)
+        expect(isNegativeInputValid('fog', 0.5)).toBe(true)
+        expect(isNegativeInputValid('fog', 5)).toBe(true)
+    })
+
+    it('rejects weight syntax, long text and strengths outside 0.5–5', () => {
+        for (const text of ['(a:-9)', 'a:b', 'a@2', 'a\nb', '[x]', '{x}']) {
+            expect(negativeInputError(text, 3)).not.toBeNull()
+        }
+        expect(negativeInputError('x'.repeat(NEGATIVE_MAX_CHARS + 1), 3)).not.toBeNull()
+        for (const strength of [0.4, 5.1, Number.NaN, Number.POSITIVE_INFINITY]) {
+            expect(negativeInputError('fog', strength)).not.toBeNull()
+        }
+    })
+})
 
 describe('H3 generation duration', () => {
     it('snaps requested fractional seconds up to the native frame grid', () => {

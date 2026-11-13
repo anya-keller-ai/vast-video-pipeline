@@ -12,6 +12,7 @@ from .comfy import ComfyUIClient, ComfyUIError, as_string_mapping
 from .config import Settings
 from .jobs import JobManager, JobNotReadyError, JobRequestError
 from .model_bundles import ModelBundleError, ModelBundleManager
+from .negpip import NEGATIVE_DEFAULT_STRENGTH, NegativePrompt
 from .readiness import ReadinessManager
 from .uploads import UPLOAD_CHUNK_BYTES, InsufficientStorageError, UploadStore
 from .workflows import (
@@ -218,6 +219,16 @@ def _resolution(payload: dict[str, object]) -> str:
     return value
 
 
+def _negative_prompt(payload: dict[str, object]) -> NegativePrompt:
+    text = payload.get("negativePrompt", "")
+    strength = payload.get("negativeStrength", NEGATIVE_DEFAULT_STRENGTH)
+    if not isinstance(text, str):
+        raise ValueError("negativePrompt must be a string.")
+    if not isinstance(strength, (int, float)) or isinstance(strength, bool):
+        raise ValueError("negativeStrength must be a number.")
+    return NegativePrompt(text, float(strength))
+
+
 async def start_job(request: web.Request) -> web.Response:
     require_real(request)
     payload = as_string_mapping(cast(object, await request.json()))
@@ -264,6 +275,7 @@ async def start_job(request: web.Request) -> web.Response:
             turbo_lora,
             audio_ids,
             resolution,
+            _negative_prompt(payload),
         )
     elif mode == "pika":
         prompt = payload.get("prompt")
@@ -301,6 +313,7 @@ async def start_job(request: web.Request) -> web.Response:
             ref_image_size,
             audio_ids,
             resolution,
+            _negative_prompt(payload),
         )
     elif mode == "interpolate":
         video = payload.get("videoId")

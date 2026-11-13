@@ -78,3 +78,41 @@ export function h3GeneratedDurationSeconds(durationSeconds: number): number | nu
     const frameCount = h3FrameCountForDuration(durationSeconds)
     return frameCount === null ? null : frameCount / framesPerSecond
 }
+
+// Negative prompt (NegPiP). Limits mirror web/backend/negpip.py.
+export const NEGATIVE_MAX_CHARS = 300
+export const NEGATIVE_MIN_STRENGTH = 0.5
+export const NEGATIVE_MAX_STRENGTH = 5
+export const NEGATIVE_DEFAULT_STRENGTH = 3
+const NEGATIVE_FORBIDDEN_CHARS = /[()[\]{}:@\r\n\t]/
+
+export function negativePromptError(text: string): string | null {
+    if (text.length > NEGATIVE_MAX_CHARS) {
+        return `Не больше ${NEGATIVE_MAX_CHARS} символов.`
+    }
+    if (NEGATIVE_FORBIDDEN_CHARS.test(text)) {
+        return 'Нельзя использовать скобки, двоеточие, @ и переносы строк.'
+    }
+    return null
+}
+
+export function isNegativeStrengthValid(strength: number): boolean {
+    return Number.isFinite(strength)
+        && strength >= NEGATIVE_MIN_STRENGTH
+        && strength <= NEGATIVE_MAX_STRENGTH
+}
+
+// An empty negative prompt disables NegPiP, so its strength is then irrelevant.
+export function negativeInputError(text: string, strength: number): string | null {
+    if (text.trim() === '') {
+        return null
+    }
+    return negativePromptError(text)
+        ?? (isNegativeStrengthValid(strength)
+            ? null
+            : `Сила должна быть от ${NEGATIVE_MIN_STRENGTH} до ${NEGATIVE_MAX_STRENGTH}.`)
+}
+
+export function isNegativeInputValid(text: string, strength: number): boolean {
+    return negativeInputError(text, strength) === null
+}
