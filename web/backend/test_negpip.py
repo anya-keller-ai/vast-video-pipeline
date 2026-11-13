@@ -52,6 +52,8 @@ class H3NegPiPGraphTests(unittest.TestCase):
         self.assertEqual(node["class_type"], "ApplyMiniMaxH3NegPiP")
         self.assertEqual(node["inputs"]["model"], ["5", 0])
         self.assertEqual(node["inputs"]["clip"], ["2", 0])
+        self.assertIs(node["inputs"]["protect_text_rows"], True)
+        self.assertIs(node["inputs"]["apply_positive_weights"], False)
         self.assertEqual(graph["8"]["inputs"]["model"], [NEGPIP_NODE_ID, 0])
         self.assertEqual(graph["9"]["inputs"]["model"], [NEGPIP_NODE_ID, 0])
         self.assertEqual(graph["7"]["inputs"]["clip"], [NEGPIP_NODE_ID, 1])

@@ -45,6 +45,9 @@ def apply_negpip(graph: ComfyPrompt) -> None:
             "value_strength": 1.0,
             # Keep any other weights in the prompt unscaled.
             "apply_positive_weights": False,
+            # Subtract only from the generated rows: untimed negative weights
+            # otherwise tend to invert (the concept gets stronger).
+            "protect_text_rows": True,
         },
     }
     guider_inputs["model"] = [NEGPIP_NODE_ID, 0]
