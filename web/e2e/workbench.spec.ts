@@ -87,7 +87,7 @@ test('Pika form has image and motion-video references without turbo toggle', asy
 
 test('cancels a running mock generation and keeps the elapsed time', async ({ page }) => {
     await openStudio(page)
-    await page.getByLabel('Промт', { exact: true }).fill('Небольшой красный парусник плывёт по спокойному морю')
+    await page.getByLabel('Промт').fill('Небольшой красный парусник плывёт по спокойному морю')
     await page.getByRole('button', { name: 'Сгенерировать видео' }).click()
     const timer = page.getByTestId('job-timer')
     await expect(timer).toContainText('Идёт')
@@ -142,7 +142,7 @@ test('frame interpolation tab offers models and multipliers instead of a scale',
 test('creates a playable generation demo and provides a download', async ({ page }) => {
     await openStudio(page)
 
-    await page.getByLabel('Промт', { exact: true }).fill('Небольшой красный парусник плывёт по спокойному морю')
+    await page.getByLabel('Промт').fill('Небольшой красный парусник плывёт по спокойному морю')
     await page.locator('#generation-images').setInputFiles({
         name: 'reference.png',
         mimeType: 'image/png',

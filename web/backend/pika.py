@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from .negpip import NO_NEGATIVE, NegativePrompt, apply_negpip
+from .negpip import apply_negpip
 from .workflows import (
     H3_DEFAULT_RESOLUTION,
     ComfyPrompt,
@@ -31,7 +31,6 @@ def build_pika_ref2va_prompt(
     ref_image_size: str = "match",
     reference_audios: Sequence[str] = (),
     resolution: str = H3_DEFAULT_RESOLUTION,
-    negative: NegativePrompt = NO_NEGATIVE,
 ) -> ComfyPrompt:
     """Build the Pika H3 Flex Ref2VA graph on top of the shared H3 base graph."""
     if not reference_images and reference_video is None:
@@ -50,6 +49,7 @@ def build_pika_ref2va_prompt(
         ref_image_size=ref_image_size,
         reference_audios=reference_audios,
         resolution=resolution,
+        wire_negpip=False,
     )
     graph["6"] = _node(
         "LoraLoaderModelOnly",
@@ -66,5 +66,5 @@ def build_pika_ref2va_prompt(
         f"workbench/jobs/{job_id}/{PIKA_OUTPUT_PREFIX}"
     )
     # After the LoRA swap, so NegPiP wraps the final model.
-    apply_negpip(graph, negative)
+    apply_negpip(graph)
     return graph

@@ -32,22 +32,7 @@ interface RealJobMediaOptions {
     audios?: readonly File[]
 }
 
-interface NegativePromptOptions {
-    negativePrompt?: string
-    negativeStrength?: number
-}
-
-function negativePromptBody(options: NegativePromptOptions): NegativePromptOptions {
-    const text = options.negativePrompt?.trim() ?? ''
-    if (text === '') {
-        return {}
-    }
-    return options.negativeStrength === undefined
-        ? { negativePrompt: text }
-        : { negativePrompt: text, negativeStrength: options.negativeStrength }
-}
-
-export type RealJobOptions = (RealJobMediaOptions & NegativePromptOptions & {
+export type RealJobOptions = (RealJobMediaOptions & {
     mode: 'generation'
     durationSeconds: number
     resolution: H3Resolution
@@ -69,7 +54,7 @@ export type RealJobOptions = (RealJobMediaOptions & NegativePromptOptions & {
     mode: 'flashvsr'
     scale: 2 | 4
     variant: FlashVsrVariant
-}) | (RealJobMediaOptions & NegativePromptOptions & {
+}) | (RealJobMediaOptions & {
     mode: 'pika'
     durationSeconds: number
     resolution: H3Resolution
@@ -139,7 +124,6 @@ export async function runRealJob(
                 resolution: options.resolution,
                 turboLora: options.turboLora,
                 referenceAudioIds: audioIds,
-                ...negativePromptBody(options),
             }
             : options.mode === 'interpolate'
                 ? { mode: options.mode, videoId, model: options.model, multiplier: options.multiplier }
@@ -158,7 +142,6 @@ export async function runRealJob(
                                 seed: options.seed,
                                 refImageSize: options.refImageSize,
                                 referenceAudioIds: audioIds,
-                                ...negativePromptBody(options),
                             }
                             : { mode: options.mode, videoId, scale: options.scale, model: options.model, batchSize: options.batchSize, temporalOverlap: options.temporalOverlap }
         let job = parseJob(await requestJson('/api/jobs', signal, {
