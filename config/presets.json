@@ -1,5 +1,6 @@
 {
     "schema_version": 1,
+    "active_gpu_profile": "24gb",
     "gpu_profiles": {
         "24gb": {
             "supported_gpus": [
@@ -14,7 +15,7 @@
                     "frames": 39,
                     "fps": 24,
                     "steps": 4,
-                    "turbo_lora": "minimax_h3_turbo_v4_step600_ema.safetensors",
+                    "turbo_lora": "minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors",
                     "allocation": "cuda:0,13gb;cpu,*"
                 },
                 "production": {
@@ -22,8 +23,8 @@
                     "height": 768,
                     "frames": 124,
                     "fps": 24,
-                    "steps": 6,
-                    "turbo_lora": "minimax_h3_turbo_v4_step600_ema.safetensors",
+                    "steps": 4,
+                    "turbo_lora": "minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors",
                     "allocation": "cuda:0,13gb;cpu,*"
                 },
                 "hero_base": {
@@ -75,8 +76,17 @@
     },
     "rules": {
         "frame_grid": "17*k+5",
+        "h3_generation_duration": {
+            "min_seconds": 5.0,
+            "max_seconds": 15.0,
+            "min_frames": 124,
+            "max_frames": 362,
+            "frame_step": 17,
+            "frame_offset": 5
+        },
         "width_height_multiple": 32,
         "intermediate_codec": "ffv1",
         "audio_source": "original_h3_video"
-    }
+    },
+    "generation_mode": "ref2v"
 }

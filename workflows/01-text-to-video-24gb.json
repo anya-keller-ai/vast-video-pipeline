@@ -2,7 +2,7 @@
   "id": "74cf6dca-79c8-4a6d-9626-e8ee598dc51e",
   "revision": 0,
   "last_node_id": 18,
-  "last_link_id": 19,
+  "last_link_id": 20,
   "nodes": [
     {
       "id": 1,
@@ -33,7 +33,7 @@
         "Node name for S&R": "UNETLoaderDisTorch2MultiGPU"
       },
       "widgets_values": [
-        "minimax_h3_fl2va_pruned_int8_convrot.safetensors",
+        "minimax_h3_ref2va_int8_convrot.safetensors",
         "default",
         "cuda:0",
         0.0,
@@ -41,7 +41,7 @@
         "cuda:0,13gb;cpu,*",
         true
       ],
-      "title": "Diffusion model -> cuda:0 + RAM [24gb]",
+      "title": "H3 Ref2V diffusion INT8 -> GPU + RAM",
       "color": "#223",
       "bgcolor": "#223"
     },
@@ -143,7 +143,8 @@
           "name": "VAE",
           "type": "VAE",
           "links": [
-            16
+            16,
+            20
           ],
           "slot_index": 0
         }
@@ -201,7 +202,7 @@
     },
     {
       "id": 6,
-      "type": "MiniMaxH3TurboLoRA",
+      "type": "LoraLoaderModelOnly",
       "pos": [
         490,
         190
@@ -232,12 +233,11 @@
         }
       ],
       "properties": {
-        "Node name for S&R": "MiniMaxH3TurboLoRA"
+        "Node name for S&R": "LoraLoaderModelOnly"
       },
       "widgets_values": [
-        "minimax_h3_turbo_v4_step600_ema.safetensors",
-        1.0,
-        true
+        "minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors",
+        1.0
       ],
       "title": "Turbo LoRA (4 steps)",
       "color": "#232",
@@ -245,7 +245,7 @@
     },
     {
       "id": 7,
-      "type": "MiniMaxH3ImageToVideo",
+      "type": "MiniMaxH3ReferenceToVideo",
       "pos": [
         870,
         60
@@ -269,16 +269,44 @@
           "link": 6
         },
         {
-          "name": "first_frame",
-          "type": "IMAGE",
-          "link": null,
-          "shape": 7
+          "name": "audio_vae",
+          "type": "VAE",
+          "link": 20
         },
         {
-          "name": "last_frame",
+          "name": "ref_images.ref_image_0",
           "type": "IMAGE",
           "link": null,
-          "shape": 7
+          "shape": 7,
+          "label": "ref_image_0"
+        },
+        {
+          "name": "ref_images.ref_image_1",
+          "type": "IMAGE",
+          "link": null,
+          "shape": 7,
+          "label": "ref_image_1"
+        },
+        {
+          "name": "ref_videos.ref_video_0",
+          "label": "ref_video_0",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "ref_video_audios.ref_video_audio_0",
+          "label": "ref_video_audio_0",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": null
+        },
+        {
+          "name": "ref_audios.ref_audio_0",
+          "label": "ref_audio_0",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": null
         }
       ],
       "outputs": [
@@ -300,13 +328,14 @@
         }
       ],
       "properties": {
-        "Node name for S&R": "MiniMaxH3ImageToVideo"
+        "Node name for S&R": "MiniMaxH3ReferenceToVideo"
       },
       "widgets_values": [
         "Cinematic, live-action, horizontal 16:9, a wide shot of rain falling on a quiet harbour at dusk, water pocked with ripples and a single moored fishing boat rocking against worn rubber tyres on the dock. The camera pushes in with small amplitude at slow speed toward the boat's running light, a warm green point smeared across the wet planking. Rain drums steadily on the deck and the hull knocks against the dock in a slow irregular rhythm, with gulls calling somewhere behind the weather.",
         1344,
         768,
-        124
+        124,
+        "match"
       ],
       "title": "Prompt + AV latent (1344x768, 5.2s)",
       "color": "#232",
@@ -397,7 +426,7 @@
     },
     {
       "id": 10,
-      "type": "MiniMaxH3TurboSampler",
+      "type": "KSamplerSelect",
       "pos": [
         1440,
         350
@@ -421,9 +450,11 @@
         }
       ],
       "properties": {
-        "Node name for S&R": "MiniMaxH3TurboSampler"
+        "Node name for S&R": "KSamplerSelect"
       },
-      "widgets_values": [],
+      "widgets_values": [
+        "res_multistep"
+      ],
       "title": "Turbo sampler (required)"
     },
     {
@@ -894,6 +925,14 @@
       16,
       0,
       "VIDEO"
+    ],
+    [
+      20,
+      4,
+      0,
+      7,
+      2,
+      "VAE"
     ]
   ],
   "groups": [],

@@ -1,104 +1,23 @@
-# Контекст проекта
-
-## Ошибки и решения
-
-[2026-09-20] Проблема: shell-проверка upstream SHA использовала разбор строки с именем репозитория и веткой через `set --`, из-за чего сформировался некорректный URL → Решение: разбирать элементы через явный разделитель `:` и отдельные переменные `repo`/`branch`.
-
-[2026-09-20] Проблема: zsh считает переменную `path` специальным отражением `PATH`; присваивание пути файла переменной `path` удалило каталоги из PATH, поэтому `curl` и `sed` стали недоступны → Решение: не использовать имя `path` в shell-скриптах, применять `file_path`.
-
-[2026-09-20] Проблема: hadolint обнаружил непинованные системные пакеты и Bash-команду `local` в Dockerfile → Решение: зафиксировать базовый image digest, явно объяснить динамическую резолюцию пакетов комментариями hadolint и подавить только DL3008/SC3043; перепроверить hadolint, shellcheck, shfmt и actionlint.
-
-[2026-09-20] Проблема: в zsh цикл проверки Secret Agent использовал read-only переменную `status`, поэтому shell остановился до postcondition snapshot → Решение: не использовать имена zsh special parameters (`status`, `path`); применять `page_state` и после навигации отдельно проверять status/snapshot.
-
-[2026-09-20] Проблема: GitHub Actions после push завершился Startup failure, потому что аккаунт GitHub billing locked и требует обновления payment information → Решение: не менять платёжные данные и не включать платный runner без отдельного согласования; зафиксировать блокер, использовать только доступную бесплатную квоту или согласовать альтернативный бесплатный remote builder.
-
-[2026-09-20] Проблема: после перевода репозитория в public GitHub Actions quality job прошёл, но Docker build остановился на `vapoursynth==80`: PyTorch runtime Python ниже 3.12, а VapourSynth 80+ требует Python>=3.12 → Решение: определить ABI базового образа и выбрать совместимую комбинацию Python/VapourSynth/BM3D/BestSource, не удаляя обязательный V-BM3D стек.
-
-[2026-09-20] Проблема: после установки Python 3.12 Docker build дошёл до `pip check`, но base package `conda-lockfiles 0.2.0` требует `pydantic>=2.12.5`, а зависимости ComfyUI оставили pydantic 2.11.10 → Решение: зафиксировать совместимую pydantic-версию после установки upstream requirements и повторить `pip check`.
-
-[2026-09-20] Проблема: zsh registry verification использовала read-only переменную `status`, поэтому проверка manifest остановилась до вывода digest → Решение: использовать `http_status`/`page_state` и не использовать zsh special parameters; повторить проверку без вывода временного registry token.
-
-[2026-09-20] Проблема: диагностический Python one-liner для локальных CDP targets потерял кавычки ключей внутри shell f-string и завершился `NameError` → Решение: для JSON diagnostics использовать heredoc или безопасные JSON-ключи, не смешивать shell/Python quoting.
-
-[2026-09-20] Проблема: heredoc Python был подключён после pipe от curl и перекрыл stdin, поэтому CDP JSON не попал в `json.load` → Решение: сохранять diagnostics response во временный файл с безопасным именем (`json_file`) или использовать `python -c` без heredoc после pipe.
-
-[2026-09-20] Проблема: Vast preview показывал `$0.050/ч`, но после готовности instance фактическая ставка стала `$0.410/ч`; диалог Stop также сообщил о storage charge `$1.2/день` → Решение: после создания всегда проверять active/stopped billing rate; при отсутствии согласованного бюджета и при `0.0/150 GB`, `No Volumes` уничтожить пустой instance для остановки начислений; зафиксировать фактически списанную сумму.
-
-[2026-09-20] Проблема: RTX 5090 instance `51774140` за `$0.028/ч` оставался `Loading...` на 13-й минуте, Vast logs заканчивались `Pull complete`, direct/proxy SSH отвечал `Connection refused`, VRAM/RAM/disk были нулевыми → Решение: не тратить лимит на бесконечное ожидание; уничтожить instance без данных, зафиксировать около `$0.02` расхода и перейти к другому host/GPU.
-
-[2026-09-20] Проблема: запуск `pytest -q` из `/Users/a/Space` собрал чужие тесты LifeLine/executorch и завершился fatal abort → Решение: запускать pytest из корня `/Users/a/Space/Projects/AI/vast-video-pipeline` или указывать только `tests/`.
-
-[2026-09-20] Проблема: Hugging Face CLI 1.32.0 отверг одновременные `--local-dir` и `--cache-dir` в `prepare-models.sh` → Решение: выставить `HF_HOME`/`HF_XET_CACHE` и передавать только `--local-dir`; проверить bash/shellcheck/shfmt и pytest из корня проекта, затем установить исправленный script на remote instance.
-
-[2026-09-20] Проблема: Secret Agent `upload` завершился `unknown flag: --path` → Решение: использовать документированный флаг `--file` для загрузки workflow через `input#comfy-file-input`.
-
-[2026-09-20] Проблема: H3 124-frame 1344x768 sampling завершился, но ComfyUI process исчез во время/после VAE decode на host с 31.2 GB RAM; log не содержит traceback и output video отсутствует → Решение: не уничтожать instance; перезапустить ComfyUI и повторить 5.2-секундный граф на 608x352 с теми же 124 frames для снижения decode memory.
-
-[2026-09-21] Проблема: stock ComfyUI `SaveLatent` вызывает `.contiguous()` у H3 `NestedTensor`, поэтому node 16 падает после успешного sampling → Решение: добавить `SaveH3StagedLatent`, который вызывает `unbind()`, проверяет две video/audio части и сохраняет их отдельными CPU-тензорами в `.h3latent.pt`; парный `LoadH3StagedLatent` восстанавливает два обычных `LATENT` выхода.
-
-[2026-09-21] Проблема: первая версия custom node проверяла `isinstance(raw_samples, torch.Tensor)`, но фактический H3 NestedTensor не прошёл эту проверку → Решение: использовать duck typing через `is_nested` и вызываемый `unbind()`, сохраняя строгую проверку частей после распаковки.
-
-[2026-09-21] Проблема: объединённый sampling + VAE decode на 1344x768 сбрасывал ComfyUI из-за пикового потребления памяти → Решение: разделить pipeline на `02-text-to-video-1344-q4-tiled.json` (sampling/staging) и `03-h3-staged-video-audio-decode.json` (temporal-tiled video VAE, audio VAE, mux); staged run успешно дал 1344x768, 124 frames, 24 fps и AAC audio.
-
-[2026-09-21] Проблема: zsh интерпретировал optional FFmpeg map `0:a:0?` как glob и остановил перекодирование до запуска → Решение: заключать такой map-спецификатор в одинарные кавычки (`'0:a:0?'`).
-
-[2026-09-21] Проблема: `SaveVideo` с `auto` дал низкий H.264 bitrate около 3.59 Mbps → Решение: сохранить VAE settings `512/64/16/4`, а в `SaveVideo` явно выбрать MP4 → H.264 → re-encode → CRF `10`; проверенный промежуточный output получился около 24.61 Mbps.
-
-[2026-09-21] Решение: по подтверждённой настройке Ани decode workflow переведён на lossless H.264 CRF `0`; VAE settings не менялись. Проверенный output получился 45,242,033 bytes и около 70.05 Mbps, с 1344x768, 124 frames, 24 fps и AAC audio.
-
-[2026-09-21] Проблема: remote image verification использовала отсутствующие в image `identify` и `file`, поэтому shell-команда завершилась ошибкой после успешного scp → Решение: проверять remote PNG через встроенный `/opt/conda/bin/python` и PIL, а размер файла — через `stat`.
-
-[2026-09-21] Проблема: reference PNG были скопированы в `/workspace/ComfyUI/input`, но ComfyUI `LoadImage` читает `/opt/ComfyUI/input`, поэтому API validation отвергла файлы как invalid image → Решение: копировать пользовательские input files в фактический `folder_paths.get_input_directory()` (`/opt/ComfyUI/input`).
-
-[2026-09-21] Проблема: SeedVR2 `LoadVideo` показал symlinked V-BM3D MKV в options, но validation отклонила его как invalid video → Решение: использовать обычную копию V-BM3D MKV в `/opt/ComfyUI/input`, а не symlink; перед `cp` удалить прежний symlink, иначе `cp` считает source и destination одним файлом.
-
-[2026-09-21] Проблема: ComfyUI process завершился/reset во время второго длительного SeedVR2 upscale; второй output не был сохранён → Решение: проверить process/queue, перезапустить ComfyUI без удаления уже сохранённых outputs и повторить variant.
-
-[2026-09-21] Проблема: параллельный rsync трёх больших output-каталогов получил `Connection reset by peer`/код 12 после передачи около 1.3 GB на поток → Решение: повторять resumable-синхронизацию по одному каталогу с `--partial`, SSH keepalive и проверкой размеров/хэшей.
-
-[2026-09-21] Проблема: после SeedVR2 non-pruned no-Turbo SSH proxy `ssh8.vast.ai:19980` и direct `180.189.55.43:42518` стали отвечать `Connection refused`; remote instance/output недоступны для завершения rsync → Решение: сохранить и проверить уже скачанные локальные outputs; оставшиеся partial files не считать готовыми и не удалять до восстановления доступа.
-
-[2026-09-21] Проблема: финальная локальная команда `python3 -m pytest -q tests` не запустилась, потому что активный Python 3.14 не содержит pytest (`No module named pytest`); временная `uv`-среда с pytest остановилась на отсутствии `torch` → Решение: не устанавливать тяжёлые зависимости в системный Python; ранее тесты проекта проходили из корректного окружения/корня, текущую финальную проверку считать `ruff`/`git diff --check` успешной, pytest — не выполненным в этой среде.
-
-[2026-09-21] Проблема: Vast instance `51902318` на host `402342` оставался в `Loading` со статусом `Pulling` более 54 минут, хотя Docker-образ занимал 8.67 GB; SSH был недоступен → Решение: не ждать бесконечно и не тратить instance без данных, уничтожить его и выбрать другой RTX 5090 host `149637` (`51909085`).
-
-[2026-09-21] Проблема: `scp` получил `stat local "29084": No such file or directory`, потому что SSH-аргумент `-p` был передан scp вместо порта → Решение: для scp использовать отдельный параметр `-P 29084`, а `-p` оставлять только для ssh.
-
-[2026-09-21] Проблема: Hugging Face CLI 1.32 остановил `prepare-models.sh` с `Cannot use both --local-dir and --cache-dir at the same time`, потому что `HF_HOME`/`HF_XET_CACHE` задавали cache-dir одновременно с `--local-dir` → Решение: перед вызовом CLI с `--local-dir` не экспортировать эти cache-переменные.
-
-[2026-09-21] Проблема: direct SeedVR2 graph получил `Invalid video/audio file`, потому что `LoadVideo`/`LoadAudio` валидируют файлы только в ComfyUI input, а H3 intermediate был сохранён в output → Решение: скопировать промежуточный MP4 в `/opt/ComfyUI/input/` и передать его basename в оба loader node.
-
-[2026-09-21] Проблема: попытка возобновить скачивание через rsync получила `Permission denied (publickey)`, потому что в SSH-аргументах rsync использовался `-P` вместо порта `-p` → Решение: для `rsync -e ssh` использовать `-p 29084`; для scp по-прежнему использовать `-P 29084`.
-
-[2026-09-21] Проблема: исправленный rsync-сеанс скачивания финального MP4 завершился `Connection closed by 54.211.20.77 port 29084` после частичной передачи → Решение: скачивать MP4 независимыми проверяемыми `dd`-чанками через несколько SSH-сеансов, затем собрать файл и проверить размер/SHA-256.
-
-[2026-09-21] Проблема: первый HTTP-over-SSH range test стартовал до готовности локального tunnel и получил `curl (7) Failed to connect to 127.0.0.1:18188` → Решение: добавить retry с задержкой после запуска туннеля.
-
-[2026-09-21] Проблема: aria2c отклонил тестовый параметр `--timeout=900`, потому что допустимый диапазон — 1–600 секунд → Решение: использовать `--timeout=600`.
-
-[2026-09-21] Проблема: aria2c с 8 HTTP connections через один SSH tunnel держал общий поток около 20–30 KiB/s (как один поток), поэтому многопоточность не ускорила proxy → Решение: не считать aria2c ускорением через один tunnel; проверить прямой SSH по публичному IP или независимые tunnels.
-
-[2026-09-21] Проблема: при первом direct scp использован `-p 48863`, и `scp` воспринял `48863` как путь (порт у scp задаётся только `-P`) → Решение: использовать `scp -P 48863`.
-
-[2026-09-21] Проблема: direct SSH оказался доступен только по `137.175.76.24:48863` (порт 22 закрыт), но aria2c через один и через восемь direct tunnels удерживал суммарно примерно 10–35 KiB/s; raw SSH и scp дали тот же порядок и обрывались → Решение: остановить transfer и не удалять instance до выбора отдельного cloud-sync маршрута.
-
-[2026-09-21] Холодная загрузка 7 моделей на instance `51909085` завершена с кодом 0: начало `2026-09-21T13:05:37Z`, конец `2026-09-21T13:39:50Z`, длительность `2053 s` (`34:13`), ожидаемый объём `76,740,768,758` bytes. `prepare-models.sh` проверил размер и SHA-256 каждого файла перед перемещением; HF CLI сообщил, что запросы были без авторизации, токен в логи не попадал.
-
-## Результаты H3 reference variants и постобработки
-
-[2026-09-21] Проверены четыре reference-first H3 постановки через ComfyUI API: `pruned-int4-turbo-8`, `pruned-int4-base-20`, `nonpruned-int8-turbo-8`, `nonpruned-int8-base-20`. Для каждой sampling history завершилась успешно, staged latent и 1344x768 H.264 CRF0 decode были сохранены; граф использовал только `first_frame` из начальной reference PNG.
-
-[2026-09-21] SeedVR2 Sharp 7B успешно завершил все четыре 4K graph history: prompt IDs `2d7053f2-e652-44c5-83f6-9612d1913050` (pruned Turbo), `7ddf905d-50f8-4a08-815b-3769ed0fd367` (pruned no-Turbo), `1348f146-b667-437b-b35a-398c90d6074e` (non-pruned Turbo), `12389379-72b1-4d08-ab90-a12c65f6622b` (non-pruned no-Turbo). Все graph использовали оригинальный H3 audio через `LoadAudio`, FPS из `GetVideoComponents` и H.264 CRF `0`.
-
-[2026-09-21] Через `ffprobe` проверены все доступные финальные SeedVR2 paths: pruned Turbo remote complete и оба non-pruned local complete имеют `3780x2160`, 124 frames, 24 fps, H.264, AAC, длительность 5.167 s; pruned no-Turbo local partial структурно показывает те же streams, но из-за размера 376307712 вместо ожидаемых 473737727 не считается целым output. SeedVR2 сохраняет aspect ratio при заданной высоте 2160, поэтому ширина 3780, а не 3840. Локально также проверены H3 1344x768 MP4 и Flow/V-BM3D FFV1 outputs: 124 frames, 24 fps, длительность 5.167 s; audio-preserving Flow outputs имеют FLAC stream.
-
-[2026-09-21] SHA-256 локальных проверенных outputs: reference non-pruned Turbo `f9a936147b273f45718bf30d11430616cc6cfab5bb42158b0bf872ec7e2f24cd`; reference non-pruned no-Turbo `613baa42e7ac2cf3d5ca83f21b5646f05d76ed2d4de231afde746cf9203c7e9c`; SeedVR2 non-pruned Turbo `1a7a94c772283f6be642315b2be47551d4e90499d701d9c43f3fce5a5293257e`; SeedVR2 non-pruned no-Turbo `ffccb95b48ed969e3cdd897413e55d858e42a0834530404207239ef994db63ec`.
-
-[2026-09-21] Готовые локальные outputs находятся в `/Users/a/Downloads/h3-pipeline-output/`: две non-pruned reference MP4, две non-pruned SeedVR2 4K MP4, три полных V-BM3D MKV (`pruned base`, `non-pruned Turbo`, `non-pruned no-Turbo`) и полные FlowDenoise MKV для двух non-pruned вариантов. Три недокачанных файла перенесены в `incomplete/` с ожидаемыми remote-размерами; они не считаются готовыми.
-
-## Правила
-
-- Docker на Mac не устанавливать, не запускать и не собирать.
-- Не включать секреты, токены, модели и результаты в Git или Docker image.
-- Перед каждым изменением запускать доступные проверки; после ошибки добавлять запись выше.
-- Коммиты не выполнять самостоятельно.
+[2026-11-07] Проблема: VACE workbench uploads шли в `/workspace/ComfyUI/input`, а живой ComfyUI читает `/opt/ComfyUI/input`; пути не совпадают → Решение: Settings по умолчанию должны использовать `<COMFYUI_ROOT>/input`, сохраняя `COMFYUI_INPUT_ROOT` override. Не переносить/удалять старые inputs. Исправление согласовано с пользователем и добавлен config regression.
+[2026-11-07] VACE: при следующей read-only проверке все три assets (`wan21_vace_14b_fp16`, `wan21_umt5_fp8`, `wan21_vae`) были ready и SHA-проверены; ComfyUI RTX 4090 49 GiB, очередь пуста. `/object_info` имеет штатные ноды `WanVaceToVideo`, `UNETLoader`, `CLIPLoader`, `VAELoader`, `LoadVideo`, `GetVideoComponents`, `LoadImage`, `ModelSamplingSD3`, `KSampler`, `VAEDecode`, `CreateVideo`, `SaveVideo`. В текущей репе закреплён API graph и builder: control video подаётся как `WanVaceToVideo.control_video`, atlas как `reference_image`; маска отсутствует. Execution остаётся заблокирован до реального GPU smoke; test input user-provided отсутствует. GPU prompt не отправлялся.
+[2026-11-07] Проблема: Playwright default browser build отсутствовал локально → Решение: использовать установленный `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome` через `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`; E2E 7/7 прошли. Backend targeted unittest 31 passed; полный backend-suite локально не проходит импорты из-за отсутствующей aiohttp в system Python, pytest также отсутствует; нельзя считать полный backend suite пройденным.
+[2026-11-07] Решение пользователя: Vast-инстанс удалён; LTX 2.5 и Wan 2.1 VACE удалены из кода и манифеста; вкладки: MiniMax H3, MiniMax H3 Turbo, Pika H3 Flex (Ref2VA), SeedVR2. Pika: база H3 INT8 + LoRA из `Pika-Labs/Pika-H3-Flex` (commit 3ff1664, `comfy/loras/pika_h3_flex_ref2va_comfy_bf16.safetensors`, SHA e4d058fb…), сэмплер `lcm`, ManualSigmas из официального шаблона Comfy-Org `video_pika_h3_flex_ref2va`; turbo встроен (6 шагов), сторонние Turbo-LoRA не используются. Риск: официальный шаблон использует pruned INT8/NVFP4 файлы H3, у нас обычные INT8 — совместимость не проверена, `execution_enabled: false` до смоука на новом инстансе.
+[2026-11-07] Проблема: выходной узел искался по жёстко заданному id, VACE «висел» на «Ожидаю сохранения результата» → Решение: id выходного узла задаётся константой графа (`PIKA_SAVE_NODE_ID`), добавлен тест.
+[2026-11-07] Проблема: `pkill -f web.backend.server` внутри ssh-команды убивал собственную оболочку → Решение: `pgrep -f '^python3 -u -m web.backend.server'`.
+[2026-11-09] Решения по H3 Fast / Regenerate-2K (specs/h3-fast-and-nvidia-regenerate.md): pruned только для Regenerate; узлы rdh9616 (NVIDIA-референс); карта 48 ГБ; аудио-референс нужен; Sol-Attn из r-vage v0.6.7. Реализовано без сервера: манифест, required_nodes и проверка узлов, билдеры, режимы API h3fast/regenerate, вкладка H3 Fast, выбор апскейлера. Не проверено на GPU: схемы узлов сверены по исходникам репозиториев, а не по живому /object_info.
+[2026-11-09] Проблема: серверные тесты нельзя было запустить локально (нет aiohttp, `timeout` отсутствует на macOS) → Решение: `uv run --no-project --python 3.14 --with aiohttp python -m unittest discover -s web/backend -t .` (100 тестов OK за 0.4 с, без сервера Vast).
+[2026-11-09] Проблема: Vast-инстансы пропадали (Connection refused / closed by remote host) после выдачи видео, backend падал вместе с SSH-туннелем → Решение: backend и туннель запускать одним отслеживаемым job; фоновые «осиротевшие» процессы блокируются хуком безопасности; если сервер отказывает, не перебирать порты, а попросить новую SSH-команду.
+[2026-11-09] Решение Ани: H3 Fast убран (не подошёл) и удалён из кода (builder, режим API, комплект, граф, аудио-референсы); NVIDIA Regenerate 2K отдельным табом, SeedVR2 снова один апскейлер. На Vast 66.203.255.4 (RTX PRO 5000 Blackwell, диск 150 ГБ) установлены по commit узлы Open-H3-Regenerate, LBH latent upscaler и r-vage sol-attn (последний теперь не нужен, удаляется только по просьбе); ComfyUI перезапущен через FOREGROUND=1 /opt/vast/scripts/start.sh отслеживаемым job. Граф Regenerate сверен с живым /object_info без ошибок.
+[2026-11-09] Проблема: Regenerate 2K падал по OOM (15 с без sparse-внимания; затем апскейлер на 15 с) и ComfyUI аварийно падал на cudaMallocAsync (torch 2.14 + CUDA 13 + Blackwell) → Решение: добавлен BlockSparseAttention sol-attn как в официальном примере, выбор 5/10/15 с (по умолчанию 5), temporal_chunking при >5 с, ComfyUI с expandable_segments и --disable-cuda-malloc. Проблема: 500 вместо JSON, когда public start_regenerate не получил новый параметр → Решение: тест на совпадение сигнатур public/private. Не подтверждено: хватает ли памяти на 15 с при 2K.
+[2026-11-09] Решение Ани: NVIDIA Regenerate 2K удалён полностью (backend builder/режим/комплект/ассеты манифеста, custom-nodes lock, workflow, таб, тесты). Остаются 4 вкладки: H3, H3 Turbo, Pika H3 Flex, SeedVR2. На Vast 66.203.255.4 остались установленные узлы Open-H3-Regenerate, LBH latent upscaler, r-vage sol-attn (не нужны, удалять только по просьбе); ComfyUI запущен с PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True и --disable-cuda-malloc. Следом по решению Ани добавляются 4 отдельных таба быстрых апскейлеров: SPAN TensorRT, RealESRGAN x2plus, FlashVSR+ Turbo, FlashVSR+ Base (нужна спецификация и исследование узлов).
+[2026-11-09] Добавлены вкладки FlashVSR+ Turbo и Base (kkget/ComfyUI-FlashVSR_Plus commit 23fef7c3bf, веса ruchangyao/FlashVSR_plus @ 46b7952, SHA-256 в манифесте, auto_download выключен). Не проверено на GPU/Blackwell. Официальные веса RealESRGAN_x2plus есть только на GitHub (sha256 49fafd45...abb, 67061725 байт), загрузчик умеет только Hugging Face: нужно решение Ани. SPAN: узел не выбран.
+[2026-11-09] Добавлены вкладки RealESRGAN x2plus, RealESRGAN AnimeVideo-v3 (x4) и SPAN 2xLiveActionV1 на встроенных узлах ComfyUI; веса по прямой ссылке с SHA-256 (поле url в манифесте, curl в prepare-models.sh). SPAN-модель CC-BY-NC-SA-4.0. Источник таблицы Ани: README egor-fedorov/trtvideo (RTX 4090, Docker+TensorRT; на Vast вложенный Docker не проверен). AnimeJaNai V3.1: только ONNX, лицензия CC BY-NC-SA 4.0, ждёт решения (внешний процесс onnxruntime-gpu). Не проверено на GPU: загрузка .pth через spandrel на ComfyUI 0.36.0.
+[2026-11-09] Решение Ани: модели без коммерческой лицензии не берём. AnimeJaNai V3.1 (CC BY-NC-SA 4.0) исключён. FlashVSR+ код и веса Apache-2.0 (проверено по model card и репозиторию). Под вопросом SPAN 2xLiveActionV1 (CC-BY-NC-SA-4.0), ждёт решения.
+[2026-11-09] Решение Ани: вкладка SPAN 2xLiveActionV1 удалена (CC-BY-NC-SA-4.0). Итого 8 вкладок: H3, H3 Turbo, Pika, SeedVR2, FlashVSR+ Turbo/Base, RealESRGAN x2plus, RealESRGAN AnimeVideo-v3. Новый сервер: ssh -p 35575 root@69.176.92.106 (RTX 4090 48 ГБ, диск 150 ГБ, ComfyUI запущен, проекта нет); ключ ~/.ssh/anya-sky, хост принят через StrictHostKeyChecking=accept-new.
+[2026-11-09] Проверено: на Vast-инстансе 69.176.92.106 нет Docker и нет CAP_SYS_ADMIN, trtvideo (Docker+TensorRT) не запускается; в план не входит. FlashVSR+ узел установлен, ComfyUI перезапущен, графы всех новых вкладок проходят валидацию живого ComfyUI.
+[2026-11-09] Проблема: загрузка комплекта Pika зависла на файле qwen3vl_32b (клиент hf с Xet: процесс жив, сеть ~0, .incomplete не растёт; прямой curl по диапазону шёл 46 МБ/с) → Решение: отмена через POST /api/model-bundles/{id}/cancel, перезапуск backend с HF_HUB_DISABLE_XET=1 и повторный POST .../download (докачка с накопленного). При повторении сначала мерить /proc/net/dev и рост .incomplete.
+[2026-11-09] Запрос Ани: нет загрузки аудио в формах H3, H3 Turbo, Pika. Причина: аудио-референсы были только в удалённой вкладке H3 Fast. Решение: узел MiniMaxH3ReferenceToVideo имеет ref_audios (до 3, AUDIO); добавлены тип загрузки audio, LoadAudio в builder-ах H3 и Pika, referenceAudioIds в API, блок в форме. Проверено: backend 98, frontend 28, E2E 13/13, граф валидируется живым ComfyUI; не проверено на GPU влияние аудио на результат.
+[2026-11-09] Проблема: загрузка моделей повторно падала до ~2 МБ/с (и раньше зависала) при живом процессе hf, хотя отдельный curl в тот же момент давал 52 МБ/с → Решение: scripts/prepare-models.sh больше не использует hf CLI, качает один докачиваемым curl (--continue-at -, --retry-all-errors, перезапуск при скорости <1 МиБ/с 30 с) по https://huggingface.co/<repo>/resolve/<rev>/<source> или по url из манифеста, размер и SHA-256 проверяются как раньше (скорость на сервере ~37 МБ/с). Токен берётся из HF_TOKEN. Прогресс в UI считается по размеру staging-файла.
+[2026-11-09] По решению Ани загрузка с Hugging Face возвращена на hf download (curl остаётся только для файлов с полем url в манифесте). Известные риски hf на Vast: зависание Xet на больших файлах и медленный одиночный поток при HF_HUB_DISABLE_XET=1; лечение: отмена и повторный запуск комплекта.
+[2026-11-10] Добавлена вкладка «Повышение FPS» (встроенные узлы ComfyUI FrameInterpolate, веса Comfy-Org/frame_interpolation: FILM Apache-2.0, RIFE MIT), множители x2/x3, модели RIFE 4.26/4.25/FILM, режим API interpolate. lip-sync (LatentSync/Wav2Lip) отклонён по лицензиям: Wav2Lip некоммерческий, LatentSync зависит от некоммерческих моделей InsightFace. Новый сервер: ssh -p 2169 root@99.9.4.202 (RTX 4090 48 ГБ); прошлые инстансы пропадали, результаты копировать на компьютер сразу.
+[2026-11-11] Запрос вкладки FastH3 Omni отменён Аней («забей, ничего не меняем»): исследование в specs/fasth3-omni-tab.md (8 шагов, до 9 изображений + 3 видео + 3 аудио, веса FastVideo/FastH3-Omni-Comfy, INT8 22,2 ГБ, только pruned-варианты, конфликт с правилом про pruned), код не писался.

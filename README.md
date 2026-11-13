@@ -3,7 +3,7 @@
 Подготовленное окружение для одного инстанса Vast.ai с RTX 3090 или RTX 4090 24 GB:
 
 ```text
-MiniMax H3/Turbo
+MiniMax H3 Ref2V / Ref2V Turbo
   → FlowDenoise
   → reference-based V-BM3D
   → SeedVR2 7B Sharp mixed FP8
@@ -17,7 +17,9 @@ MiniMax H3/Turbo
 - GitHub: `anya-keller/vast-video-pipeline`;
 - Docker Hub: `anyakeller/vast-video-pipeline`.
 
-Образ ещё не собран и не опубликован. GPU-тест ещё не запускался. Docker на Mac не нужен и не устанавливается.
+Образ ещё не собран и не опубликован. Его GPU-проверка остаётся отдельной задачей. Docker на Mac не нужен и не устанавливается.
+
+Мастерская `web/` предоставляет независимые вкладки MiniMax H3, MiniMax H3 Turbo, Pika H3 Flex (Ref2VA) и SeedVR2; поддерживает локальный mock и реальный `REAL_CONNECTION`. Реальный unpruned H3 Ref2V GPU smoke, SeedVR2 ×2/×4 и playback/Range/download/media проверки выполнены на Vast; исторический smoke на pruned checkpoint не засчитывался. В генерации разрешение фиксировано 1344×768, желаемая длительность — 5–15 секунд с дробной частью; H3 округляет вверх по native frame-grid `17*k+5` при 24 fps без обрезки кадров. Turbo LoRA вынесена в отдельную вкладку «MiniMax H3 Turbo» (4 шага); вкладка «MiniMax H3» использует 20 шагов без LoRA. UI выбора разрешения и 2K/API пути нет. Полная спецификация — [specs/h3-generation-controls.md](specs/h3-generation-controls.md); подключение и деплой — [web/README.md](web/README.md) и [specs/real-vast-workbench-connection.md](specs/real-vast-workbench-connection.md). Новая ветка no-LoRA/20 шагов пока ждёт отдельного GPU smoke; последний локальный regression прошёл, но этот локальный release не развёрнут, поскольку SSH к существующему инстансу отказал.
 
 ## Сборка окружения
 
@@ -57,19 +59,19 @@ ssh -p <SSH_PORT> root@<HOST> -L 8188:localhost:8188
 ```bash
 /opt/vast/scripts/doctor.sh
 hf auth login
-/opt/vast/scripts/prepare-models.sh
+/opt/vast/scripts/prepare-models.sh --bundle h3_base
 /opt/vast/scripts/doctor.sh --models --gpu
 ```
 
-`prepare-models.sh` проверяет размер и SHA-256, скачивает недостающие файлы с возобновлением и блокирует параллельные запуски. На время скачивания не запускай генерацию.
+Передача всегда относится только к явно выбранному bundle. Доступные ID: `h3_base`, `h3_turbo`, `pika_h3_flex_ref2va`, `seedvr2_upscale`. UI не начинает скачивания при открытии или переключении вкладок. Скрипт закрепляет repository revisions, принимает только lock-listed paths, проверяет disk space, размер и SHA-256; invalid files/symlinks не перезаписываются автоматически. Cancel сохраняет partial data; удаление доступно отдельно и только вручную. Hugging Face Hub 1.32 пишет новую передачу в уникальный `.incomplete`, поэтому возобновление после cancel не гарантируется.
 
-Модели занимают примерно 55 GiB. Нужен запас под кэш, входы, промежуточные PNG/FFV1 и результаты; точный размер диска рассчитывается перед арендой.
+Объём диска и свободное место показываются для выбранного bundle, а полный lock находится в `config/models.lock.json`. Нужен дополнительный запас под кэш, входы, промежуточные PNG/FFV1 и результаты. Подготовка модели сама по себе не означает, что соответствующий workflow runtime уже поддержан: генерация Pika gated в интерфейсе до подтверждающего GPU smoke.
 
 ## Workflow
 
-- `workflows/01-text-to-video-24gb.json` — H3 на 24 GB, адаптированный под v4 Turbo.
-- `workflows/02-text-to-video-1344-q4-tiled.json` — первый staged-run: Q4 H3 4-step sampling на 1344x768 с сохранением video/audio latent.
-- `workflows/02-text-to-video-1344-q4-8step-staged.json` — staged-run для 8-step Turbo sampling на 1344x768.
+- `workflows/01-text-to-video-24gb.json` — H3 Ref2V unpruned INT8, Ref2V 4-step Turbo LoRA, sampler `res_multistep` и DisTorch CPU-offload.
+- `workflows/02-text-to-video-1344-q4-tiled.json` — staged Ref2V unpruned INT8 4-step sampling на 1344x768 с сохранением video/audio latent.
+- `workflows/02-text-to-video-1344-q4-8step-staged.json` — тот же Ref2V unpruned 4-step набор весов; имя файла историческое. Q4/v4 LoRA/8-step больше не используются этими графами.
 - `workflows/03-h3-staged-video-audio-decode.json` — второй staged-run: tiled video VAE, audio VAE и mux в MP4 с lossless H.264 CRF 0.
 - `postprocess/h3_staged_latent.py` — custom nodes `SaveH3StagedLatent`/`LoadH3StagedLatent`; stock `SaveLatent` не подходит NestedTensor H3.
 - `workflows/flowdenoise-raft-example.json` — пример FlowDenoise.

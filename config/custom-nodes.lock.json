@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "note": "Custom nodes are installed by the operator; the workbench never installs code. Each node is pinned by commit and checked via /object_info before a job starts.",
+  "packs": [
+    {
+      "id": "kjnodes",
+      "repository": "https://github.com/kijai/ComfyUI-KJNodes",
+      "commit": null,
+      "license": "GPL-3.0",
+      "provides": [
+        "PathchSageAttentionKJ"
+      ],
+      "required_by": [
+        "h3_base",
+        "h3_turbo",
+        "pika_h3_flex_ref2va"
+      ]
+    },
+    {
+      "id": "flashvsr_plus",
+      "repository": "https://github.com/kkget/ComfyUI-FlashVSR_Plus",
+      "commit": "23fef7c3bf",
+      "license": "Apache-2.0",
+      "provides": [
+        "FlashVSRPlusLoader",
+        "FlashVSRPlusVideoUpscale"
+      ],
+      "required_by": [
+        "flashvsr_plus_turbo",
+        "flashvsr_plus_base"
+      ]
+    }
+  ]
+}

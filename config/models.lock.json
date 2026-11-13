@@ -1,5 +1,5 @@
 {
-    "schema_version": 1,
+    "schema_version": 2,
     "source": "Hugging Face",
     "model_root": "/workspace/ComfyUI/models",
     "models": [
@@ -11,7 +11,10 @@
             "bytes": 605254808,
             "sha256": "8e505d95dd1561d47abd43d4238fd40d9bb1ae9e147ed0a4cba778d76ae4db48",
             "required": true,
-            "license_review": "Проверить условия model card перед коммерческим использованием."
+            "license_review": "Проверить условия model card перед коммерческим использованием.",
+            "revision": "912b6e38b2092ec4d2e86d24183e0d59ea059d48",
+            "format": "safetensors",
+            "loader": "comfyui-vae"
         },
         {
             "id": "h3_video_vae",
@@ -21,17 +24,23 @@
             "bytes": 5207808496,
             "sha256": "7c1f131492e7eddacaac9069a61b81bdd39de5cc96561e677c5eab1cdce5e522",
             "required": true,
-            "license_review": "Проверить условия model card перед коммерческим использованием."
+            "license_review": "Проверить условия model card перед коммерческим использованием.",
+            "revision": "912b6e38b2092ec4d2e86d24183e0d59ea059d48",
+            "format": "safetensors",
+            "loader": "comfyui-vae"
         },
         {
-            "id": "h3_diffusion_pruned_int8",
+            "id": "h3_diffusion_ref2v_int8",
             "repository": "Comfy-Org/MiniMax-H3",
-            "source": "diffusion_models/minimax_h3_fl2va_pruned_int8_convrot.safetensors",
-            "target": "diffusion_models/minimax_h3_fl2va_pruned_int8_convrot.safetensors",
-            "bytes": 20970379616,
-            "sha256": "e889202c41dafb67b10d67b97f0d8541508036a6090af23425a5c2615d03c47a",
+            "source": "diffusion_models/minimax_h3_ref2va_int8_convrot.safetensors",
+            "target": "diffusion_models/minimax_h3_ref2va_int8_convrot.safetensors",
+            "bytes": 34038894550,
+            "sha256": "9eef934046a0671bc8a5daf87100705e1478419c574cfde70c50fbe6885f76a9",
             "required": true,
-            "license_review": "Проверить условия model card перед коммерческим использованием."
+            "license_review": "Проверить условия model card перед коммерческим использованием.",
+            "revision": "912b6e38b2092ec4d2e86d24183e0d59ea059d48",
+            "format": "safetensors-int8-convrot",
+            "loader": "comfyui-distorch-unet"
         },
         {
             "id": "h3_text_encoder_int8",
@@ -41,17 +50,49 @@
             "bytes": 27141342152,
             "sha256": "bc2ced0fbea64757fa9acddccfc0b3f4819d1dcf1da6c124d690d368be283923",
             "required": true,
-            "license_review": "Проверить условия model card перед коммерческим использованием."
+            "license_review": "Проверить условия model card перед коммерческим использованием.",
+            "revision": "912b6e38b2092ec4d2e86d24183e0d59ea059d48",
+            "format": "safetensors-int8-convrot",
+            "loader": "comfyui-distorch-clip"
         },
         {
-            "id": "h3_turbo_v4",
-            "repository": "larryvrh/MiniMax-H3-Turbo-Lora",
-            "source": "minimax_h3_turbo_v4_step600_ema.safetensors",
-            "target": "loras/minimax_h3_turbo_v4_step600_ema.safetensors",
-            "bytes": 779849816,
-            "sha256": "5f3a626cd72c93a8b9318d6760c510bc5092d2ab13aaba1f932c5bab07a416d3",
+            "id": "h3_ref2v_turbo",
+            "repository": "Comfy-Org/MiniMax-H3",
+            "source": "loras/minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors",
+            "target": "loras/minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors",
+            "bytes": 1956193000,
+            "sha256": "5b9ab5ade15d0775676d01a907268a69a1468dc6033b3b0d3ded5502f3ebb84c",
             "required": true,
-            "license_review": "Проверить условия model card перед коммерческим использованием."
+            "license_review": "Проверить условия model card перед коммерческим использованием.",
+            "revision": "912b6e38b2092ec4d2e86d24183e0d59ea059d48",
+            "format": "safetensors-bf16-lora",
+            "loader": "comfyui-lora"
+        },
+        {
+            "id": "seedvr2_3b_fp8",
+            "repository": "numz/SeedVR2_comfyUI",
+            "source": "seedvr2_ema_3b_fp8_e4m3fn.safetensors",
+            "target": "SEEDVR2/seedvr2_ema_3b_fp8_e4m3fn.safetensors",
+            "bytes": 3391544696,
+            "sha256": "3bf1e43ebedd570e7e7a0b1b60d6a02e105978f505c8128a241cde99a8240cff",
+            "required": true,
+            "license_review": "Проверить условия model card перед коммерческим использованием.",
+            "revision": "09ced71023636e9bc8cdf9cdecfb2625d1e691e8",
+            "format": "safetensors-fp8-mixed",
+            "loader": "comfyui-seedvr2-dit"
+        },
+        {
+            "id": "seedvr2_7b_mixed_fp8",
+            "repository": "AInVFX/SeedVR2_comfyUI",
+            "source": "seedvr2_ema_7b_fp8_e4m3fn_mixed_block35_fp16.safetensors",
+            "target": "SEEDVR2/seedvr2_ema_7b_fp8_e4m3fn_mixed_block35_fp16.safetensors",
+            "bytes": 8466296338,
+            "sha256": "3d68b5ec0b295ae28092e355c8cad870edd00b817b26587d0cb8f9dd2df19bb2",
+            "required": true,
+            "license_review": "Проверить условия model card перед коммерческим использованием.",
+            "revision": "ac66d6d98fa49975d893b58c55bff7677191c862",
+            "format": "safetensors-fp8-mixed",
+            "loader": "comfyui-seedvr2-dit"
         },
         {
             "id": "seedvr2_sharp_7b_mixed_fp8",
@@ -61,7 +102,10 @@
             "bytes": 8466296338,
             "sha256": "0d2c5b8be0fda94351149c5115da26aef4f4932a7a2a928c6f184dda9186e0be",
             "required": true,
-            "license_review": "Проверить условия model card перед коммерческим использованием."
+            "license_review": "Проверить условия model card перед коммерческим использованием.",
+            "revision": "ac66d6d98fa49975d893b58c55bff7677191c862",
+            "format": "safetensors-fp8-mixed",
+            "loader": "comfyui-seedvr2-dit"
         },
         {
             "id": "seedvr2_vae_fp16",
@@ -71,7 +115,303 @@
             "bytes": 501324814,
             "sha256": "20678548f420d98d26f11442d3528f8b8c94e57ee046ef93dbb7633da8612ca1",
             "required": true,
-            "license_review": "Проверить условия model card перед коммерческим использованием."
+            "license_review": "Проверить условия model card перед коммерческим использованием.",
+            "revision": "09ced71023636e9bc8cdf9cdecfb2625d1e691e8",
+            "format": "safetensors-fp16",
+            "loader": "comfyui-seedvr2-vae"
+        },
+        {
+            "id": "pika_h3_flex_ref2va_lora",
+            "repository": "Pika-Labs/Pika-H3-Flex",
+            "revision": "3ff166447d5edb1406107ab8370c42000ce173e4",
+            "source": "comfy/loras/pika_h3_flex_ref2va_comfy_bf16.safetensors",
+            "target": "loras/pika_h3_flex_ref2va_comfy_bf16.safetensors",
+            "bytes": 1956172176,
+            "sha256": "e4d058fbd027377b925a0ee607b514ddd9037873fee3afa05d73b302e6f7f8e1",
+            "required": false,
+            "license_review": "MiniMax H3 Community License Agreement; проверить условия перед коммерческим использованием.",
+            "format": "safetensors-bf16-lora",
+            "loader": "comfyui-lora"
+        },
+        {
+            "id": "flashvsr_plus_turbo_dit",
+            "repository": "ruchangyao/FlashVSR_plus",
+            "source": "turbo/dit.safetensors",
+            "target": "FlashVSR_Plus/turbo/dit.safetensors",
+            "bytes": 5676070392,
+            "sha256": "7862b92178176fa3aebc34c6c071daca6b56ab1dddb8e7ff9a01c47f5226ec8b",
+            "required": true,
+            "license_review": "Лицензия весов и кода FlashVSR+: Apache-2.0 (model card ruchangyao/FlashVSR_plus; базовая модель Wan2.1).",
+            "revision": "46b79520946ac67dec94d1566490690953c7debc",
+            "format": "safetensors-bf16",
+            "loader": "flashvsr-plus-dit"
+        },
+        {
+            "id": "flashvsr_plus_turbo_lq_proj",
+            "repository": "ruchangyao/FlashVSR_plus",
+            "source": "turbo/lq_proj_in.safetensors",
+            "target": "FlashVSR_Plus/turbo/lq_proj_in.safetensors",
+            "bytes": 1151384272,
+            "sha256": "e77b378ae12342eefbb58f924256f362a151b93ce73dd32808fcdaca9c051496",
+            "required": true,
+            "license_review": "Лицензия весов и кода FlashVSR+: Apache-2.0 (model card ruchangyao/FlashVSR_plus; базовая модель Wan2.1).",
+            "revision": "46b79520946ac67dec94d1566490690953c7debc",
+            "format": "safetensors-bf16",
+            "loader": "flashvsr-plus-lq-proj"
+        },
+        {
+            "id": "flashvsr_plus_base_dit",
+            "repository": "ruchangyao/FlashVSR_plus",
+            "source": "base/dit.safetensors",
+            "target": "FlashVSR_Plus/base/dit.safetensors",
+            "bytes": 5676070392,
+            "sha256": "58d64c1f1b3a559bafb69bb014f3ab2745e800c89435afdc154966eb96bc7459",
+            "required": true,
+            "license_review": "Лицензия весов и кода FlashVSR+: Apache-2.0 (model card ruchangyao/FlashVSR_plus; базовая модель Wan2.1).",
+            "revision": "46b79520946ac67dec94d1566490690953c7debc",
+            "format": "safetensors-bf16",
+            "loader": "flashvsr-plus-dit"
+        },
+        {
+            "id": "flashvsr_plus_base_lq_proj",
+            "repository": "ruchangyao/FlashVSR_plus",
+            "source": "base/lq_proj_in.safetensors",
+            "target": "FlashVSR_Plus/base/lq_proj_in.safetensors",
+            "bytes": 1151384272,
+            "sha256": "a1fe997f19060171db8dd4d58c30debc78ddfcc357b63481798792a38a356d8d",
+            "required": true,
+            "license_review": "Лицензия весов и кода FlashVSR+: Apache-2.0 (model card ruchangyao/FlashVSR_plus; базовая модель Wan2.1).",
+            "revision": "46b79520946ac67dec94d1566490690953c7debc",
+            "format": "safetensors-bf16",
+            "loader": "flashvsr-plus-lq-proj"
+        },
+        {
+            "id": "flashvsr_plus_tc_decoder",
+            "repository": "ruchangyao/FlashVSR_plus",
+            "source": "TCDecoder.ckpt",
+            "target": "FlashVSR_Plus/TCDecoder.ckpt",
+            "bytes": 189018333,
+            "sha256": "e224bdcf2f52745cbf4d393ff5374c2ba09e90285d5d19062d2bf63b915b6161",
+            "required": true,
+            "license_review": "Лицензия весов и кода FlashVSR+: Apache-2.0 (model card ruchangyao/FlashVSR_plus; базовая модель Wan2.1).",
+            "revision": "46b79520946ac67dec94d1566490690953c7debc",
+            "format": "ckpt",
+            "loader": "flashvsr-plus-decoder"
+        },
+        {
+            "id": "realesrgan_x2plus",
+            "repository": "xinntao/Real-ESRGAN",
+            "source": "RealESRGAN_x2plus.pth",
+            "target": "upscale_models/RealESRGAN_x2plus.pth",
+            "bytes": 67061725,
+            "sha256": "49fafd45f8fd7aa8d31ab2a22d14d91b536c34494a5cfe31eb5d89c2fa266abb",
+            "required": true,
+            "license_review": "Лицензия Real-ESRGAN: BSD-3-Clause.",
+            "revision": "v0.2.1",
+            "format": "pytorch-pth",
+            "loader": "comfyui-upscale-model",
+            "url": "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth"
+        },
+        {
+            "id": "realesrgan_animevideo_v3",
+            "repository": "xinntao/Real-ESRGAN",
+            "source": "realesr-animevideov3.pth",
+            "target": "upscale_models/realesr-animevideov3.pth",
+            "bytes": 2504012,
+            "sha256": "b8a8376811077954d82ca3fcf476f1ac3da3e8a68a4f4d71363008000a18b75d",
+            "required": true,
+            "license_review": "Лицензия Real-ESRGAN: BSD-3-Clause.",
+            "revision": "v0.2.5.0",
+            "format": "pytorch-pth",
+            "loader": "comfyui-upscale-model",
+            "url": "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesr-animevideov3.pth"
+        },
+        {
+            "id": "interp_film_net_fp16",
+            "repository": "Comfy-Org/frame_interpolation",
+            "source": "frame_interpolation/film_net_fp16.safetensors",
+            "target": "frame_interpolation/film_net_fp16.safetensors",
+            "bytes": 68882302,
+            "sha256": "f226e51375dc839d4b40e5c3d63da560dd1ea1c962364ec78f5adf2d05db05c0",
+            "required": true,
+            "license_review": "Лицензии: FILM Apache-2.0 (google-research/frame-interpolation), RIFE MIT (hzwer/Practical-RIFE); карточка Comfy-Org/frame_interpolation: mit-and-apache-2.0.",
+            "revision": "aa7009be4d1471ea0bac91d6fe4d7e4b637cbbfc",
+            "format": "safetensors",
+            "loader": "comfyui-frame-interpolation"
+        },
+        {
+            "id": "interp_rife_v4_25",
+            "repository": "Comfy-Org/frame_interpolation",
+            "source": "frame_interpolation/rife_v4.25.safetensors",
+            "target": "frame_interpolation/rife_v4.25.safetensors",
+            "bytes": 22674688,
+            "sha256": "1505884b9bdae956795430d2a70f7e2317b2abd8f130f8cfdb35a5759f909481",
+            "required": true,
+            "license_review": "Лицензии: FILM Apache-2.0 (google-research/frame-interpolation), RIFE MIT (hzwer/Practical-RIFE); карточка Comfy-Org/frame_interpolation: mit-and-apache-2.0.",
+            "revision": "aa7009be4d1471ea0bac91d6fe4d7e4b637cbbfc",
+            "format": "safetensors",
+            "loader": "comfyui-frame-interpolation"
+        },
+        {
+            "id": "interp_rife_v4_26",
+            "repository": "Comfy-Org/frame_interpolation",
+            "source": "frame_interpolation/rife_v4.26.safetensors",
+            "target": "frame_interpolation/rife_v4.26.safetensors",
+            "bytes": 22674688,
+            "sha256": "151874592c877740e5db11522f4514df569eeafb0a0fcb2696f16e9e8d317c94",
+            "required": true,
+            "license_review": "Лицензии: FILM Apache-2.0 (google-research/frame-interpolation), RIFE MIT (hzwer/Practical-RIFE); карточка Comfy-Org/frame_interpolation: mit-and-apache-2.0.",
+            "revision": "aa7009be4d1471ea0bac91d6fe4d7e4b637cbbfc",
+            "format": "safetensors",
+            "loader": "comfyui-frame-interpolation"
+        }
+    ],
+    "bundles": [
+        {
+            "id": "h3_base",
+            "title": "MiniMax H3 · Base",
+            "assets": [
+                "h3_audio_vae",
+                "h3_video_vae",
+                "h3_diffusion_ref2v_int8",
+                "h3_text_encoder_int8"
+            ],
+            "runtime": "comfyui",
+            "workflows": [
+                "h3_ref2v_base"
+            ]
+        },
+        {
+            "id": "h3_turbo",
+            "title": "MiniMax H3 · Turbo",
+            "assets": [
+                "h3_audio_vae",
+                "h3_video_vae",
+                "h3_diffusion_ref2v_int8",
+                "h3_text_encoder_int8",
+                "h3_ref2v_turbo"
+            ],
+            "runtime": "comfyui",
+            "workflows": [
+                "h3_ref2v_turbo"
+            ]
+        },
+        {
+            "id": "seedvr2_upscale",
+            "title": "SeedVR2 · 3B / 7B / 7B Sharp",
+            "assets": [
+                "seedvr2_3b_fp8",
+                "seedvr2_7b_mixed_fp8",
+                "seedvr2_sharp_7b_mixed_fp8",
+                "seedvr2_vae_fp16"
+            ],
+            "runtime": "comfyui",
+            "workflows": [
+                "seedvr2_x2",
+                "seedvr2_x4"
+            ]
+        },
+        {
+            "id": "pika_h3_flex_ref2va",
+            "title": "Pika H3 Flex · Ref2VA",
+            "assets": [
+                "h3_audio_vae",
+                "h3_video_vae",
+                "h3_diffusion_ref2v_int8",
+                "h3_text_encoder_int8",
+                "pika_h3_flex_ref2va_lora"
+            ],
+            "runtime": "comfyui",
+            "workflows": [
+                "pika_h3_flex_ref2va"
+            ],
+            "execution_enabled": true
+        },
+        {
+            "id": "flashvsr_plus_turbo",
+            "title": "FlashVSR+ Turbo",
+            "assets": [
+                "flashvsr_plus_turbo_dit",
+                "flashvsr_plus_turbo_lq_proj",
+                "flashvsr_plus_tc_decoder"
+            ],
+            "runtime": "comfyui",
+            "workflows": [
+                "flashvsr_plus_turbo"
+            ],
+            "execution_enabled": true,
+            "required_nodes": [
+                "FlashVSRPlusLoader",
+                "FlashVSRPlusVideoUpscale"
+            ]
+        },
+        {
+            "id": "flashvsr_plus_base",
+            "title": "FlashVSR+ Base",
+            "assets": [
+                "flashvsr_plus_base_dit",
+                "flashvsr_plus_base_lq_proj",
+                "flashvsr_plus_tc_decoder"
+            ],
+            "runtime": "comfyui",
+            "workflows": [
+                "flashvsr_plus_base"
+            ],
+            "execution_enabled": true,
+            "required_nodes": [
+                "FlashVSRPlusLoader",
+                "FlashVSRPlusVideoUpscale"
+            ]
+        },
+        {
+            "id": "realesrgan_x2plus",
+            "title": "RealESRGAN x2plus",
+            "assets": [
+                "realesrgan_x2plus"
+            ],
+            "runtime": "comfyui",
+            "workflows": [
+                "realesrgan_x2plus"
+            ],
+            "execution_enabled": true,
+            "required_nodes": [
+                "UpscaleModelLoader",
+                "ImageUpscaleWithModel"
+            ]
+        },
+        {
+            "id": "realesrgan_animevideo_v3",
+            "title": "RealESRGAN AnimeVideo-v3",
+            "assets": [
+                "realesrgan_animevideo_v3"
+            ],
+            "runtime": "comfyui",
+            "workflows": [
+                "realesrgan_animevideo_v3"
+            ],
+            "execution_enabled": true,
+            "required_nodes": [
+                "UpscaleModelLoader",
+                "ImageUpscaleWithModel"
+            ]
+        },
+        {
+            "id": "frame_interpolation",
+            "title": "Повышение FPS · FILM / RIFE",
+            "assets": [
+                "interp_film_net_fp16",
+                "interp_rife_v4_25",
+                "interp_rife_v4_26"
+            ],
+            "runtime": "comfyui",
+            "workflows": [
+                "frame_interpolation"
+            ],
+            "execution_enabled": true,
+            "required_nodes": [
+                "FrameInterpolationModelLoader",
+                "WorkbenchChunkedInterpolate"
+            ]
         }
     ]
 }
