@@ -10,6 +10,7 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 
 from .config import Settings
+from .h3_guides import GuideRequest
 from .models import ModelSpec
 from .server import JOBS_KEY, MODEL_BUNDLES_KEY, READINESS_KEY, create_app
 
@@ -127,8 +128,49 @@ class ServerTests(unittest.IsolatedAsyncioTestCase):
             )
         self.assertEqual(response.status, 202)
         start.assert_awaited_once_with(
-            "<Picture 1>", ["one", "two"], "motion", 5.0, 42, "max", ["voice"], "draft"
+            "<Picture 1>",
+            ["one", "two"],
+            "motion",
+            5.0,
+            42,
+            "max",
+            ["voice"],
+            "draft",
+            [],
         )
+
+    async def test_guides_reach_the_manager_and_are_validated(self) -> None:
+        manager = self.client.app[JOBS_KEY]
+        start = AsyncMock(return_value={"id": "abc", "status": "queued"})
+        body: dict[str, object] = {
+            "mode": "generation",
+            "prompt": "scene",
+            "referenceImageIds": [],
+            "durationSeconds": 5.0,
+            "turboLora": False,
+            "guides": [{"imageId": "a", "frame": 0}, {"imageId": "b", "frame": 60}],
+        }
+        with patch.object(manager, "start_generation", start):
+            response = await self.client.post("/api/jobs", json=body)
+            self.assertEqual(response.status, 202)
+            self.assertEqual(
+                start.await_args.args[-1],
+                [GuideRequest("a", 0), GuideRequest("b", 60)],
+            )
+            for bad in (
+                "x",
+                [{"imageId": 1, "frame": 0}],
+                [{"imageId": "a", "frame": "0"}],
+                [{"imageId": "a", "frame": True}],
+                [{"imageId": "a"}],
+                ["a"],
+            ):
+                with self.subTest(guides=bad):
+                    rejected = await self.client.post(
+                        "/api/jobs", json={**body, "guides": bad}
+                    )
+                    self.assertEqual(rejected.status, 400)
+        self.assertEqual(start.await_count, 1)
 
     async def test_cancel_endpoint_calls_manager(self) -> None:
         manager = self.client.app[JOBS_KEY]
@@ -164,6 +206,7 @@ class ServerTests(unittest.IsolatedAsyncioTestCase):
             False,
             ["voice", "music"],
             "draft",
+            [],
         )
 
     async def test_rejects_invalid_generation_duration_and_turbo_type(self) -> None:

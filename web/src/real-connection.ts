@@ -32,7 +32,11 @@ interface RealJobMediaOptions {
     audios?: readonly File[]
 }
 
-export type RealJobOptions = (RealJobMediaOptions & {
+interface GuideOptions {
+    guides?: readonly { file: File; frame: number }[]
+}
+
+export type RealJobOptions = (RealJobMediaOptions & GuideOptions & {
     mode: 'generation'
     durationSeconds: number
     resolution: H3Resolution
@@ -54,7 +58,7 @@ export type RealJobOptions = (RealJobMediaOptions & {
     mode: 'flashvsr'
     scale: 2 | 4
     variant: FlashVsrVariant
-}) | (RealJobMediaOptions & {
+}) | (RealJobMediaOptions & GuideOptions & {
     mode: 'pika'
     durationSeconds: number
     resolution: H3Resolution
@@ -114,6 +118,15 @@ export async function runRealJob(
         if (videoId !== null) {
             uploadedIds.push(videoId)
         }
+        const guides: { imageId: string; frame: number }[] = []
+        if (options.mode === 'generation' || options.mode === 'pika') {
+            for (const guide of options.guides ?? []) {
+                const id = await uploadFile(guide.file, onUpdate, signal)
+                guides.push({ imageId: id, frame: guide.frame })
+                uploadedIds.push(id)
+            }
+        }
+        const guidesBody = guides.length === 0 ? {} : { guides }
         const body = options.mode === 'generation'
             ? {
                 mode: options.mode,
@@ -124,6 +137,7 @@ export async function runRealJob(
                 resolution: options.resolution,
                 turboLora: options.turboLora,
                 referenceAudioIds: audioIds,
+                ...guidesBody,
             }
             : options.mode === 'interpolate'
                 ? { mode: options.mode, videoId, model: options.model, multiplier: options.multiplier }
@@ -142,6 +156,7 @@ export async function runRealJob(
                                 seed: options.seed,
                                 refImageSize: options.refImageSize,
                                 referenceAudioIds: audioIds,
+                                ...guidesBody,
                             }
                             : { mode: options.mode, videoId, scale: options.scale, model: options.model, batchSize: options.batchSize, temporalOverlap: options.temporalOverlap }
         let job = parseJob(await requestJson('/api/jobs', signal, {

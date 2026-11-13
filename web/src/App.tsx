@@ -39,8 +39,11 @@ import {
     H3_OUTPUT_WIDTH,
     h3GeneratedDurationSeconds,
     h3FrameCountForDuration,
+    areGuideFramesValid,
+    guideFrameError,
+    MAX_GUIDE_FRAMES,
 } from './h3-generation'
-import type { H3Resolution } from './h3-generation'
+import type { GuideFrame, H3Resolution } from './h3-generation'
 import { createDemoWebM } from './mock-video'
 import type { DemoVideoOptions } from './mock-video'
 import { cancelRealJob, getRuntimeConfig, runRealJob } from './real-connection'
@@ -267,6 +270,9 @@ function App() {
     const [referenceVideo, setReferenceVideo] = createSignal<File | null>(null)
     const [referenceImages, setReferenceImages] = createSignal<File[]>([])
     const [referenceAudios, setReferenceAudios] = createSignal<File[]>([])
+    const [guideFrames, setGuideFrames] = createSignal<GuideFrame[]>([])
+    const [guideError, setGuideError] = createSignal<string | null>(null)
+    let nextGuideId = 0
     const [generationPrompt, setGenerationPrompt] = createSignal('')
     const [generationDuration, setGenerationDuration] = createSignal<number>(H3_DURATION_OPTIONS[0]?.seconds ?? 0)
     const [generationResolution, setGenerationResolution] = createSignal<H3Resolution>('standard')
@@ -509,6 +515,30 @@ function App() {
             : validation.rejected.map((rejection) => `${rejection.name}: ${rejection.reason}`).join(' '))
     }
 
+    const selectGuideImages = (files: File[]) => {
+        const validation = validateImageBatch(guideFrames().length, files, MAX_GUIDE_FRAMES)
+        if (validation.accepted.length > 0) {
+            setGuideFrames((current) => {
+                const next = [...current]
+                for (const file of validation.accepted) {
+                    // The lowest free frame keeps every new guide valid and unique.
+                    let frame = 0
+                    while (next.some((guide) => guide.frame === frame)) {
+                        frame += 1
+                    }
+                    nextGuideId += 1
+                    next.push({ id: nextGuideId, file, frame })
+                }
+                return next
+            })
+            setGenerationJob(createIdleJob())
+        }
+
+        setGuideError(validation.rejected.length === 0
+            ? null
+            : validation.rejected.map((rejection) => `${rejection.name}: ${rejection.reason}`).join(' '))
+    }
+
     const selectReferenceAudios = (files: File[]) => {
         const validation = validateAudioBatch(referenceAudios().length, files)
         if (validation.accepted.length > 0) {
@@ -602,6 +632,7 @@ function App() {
         const generatedDuration = h3GeneratedDurationSeconds(requestedDuration)
         if (!isPromptValid(generationPrompt())
             || generatedDuration === null
+            || (realConnection() && !areGuideFramesValid(guideFrames(), h3FrameCountForDuration(requestedDuration)))
             || generationJob().status === 'running') {
             return
         }
@@ -621,6 +652,7 @@ function App() {
                     resolution: generationResolution(),
                     seed: Math.floor(Math.random() * Number.MAX_SAFE_INTEGER),
                     refImageSize: refImageSize(),
+                    guides: guideFrames(),
                 }, 'generation')
                 return
             }
@@ -633,6 +665,7 @@ function App() {
                 durationSeconds: requestedDuration,
                 resolution: generationResolution(),
                 turboLora: turboLoraEnabled(),
+                guides: guideFrames(),
             }, 'generation')
             return
         }
@@ -797,6 +830,18 @@ function App() {
                                                     referenceVideo={referenceVideo()}
                                                     referenceImages={referenceImages()}
                                                     referenceAudios={referenceAudios()}
+                                                    guideFrames={guideFrames()}
+                                                    guideError={guideError()}
+                                                    onGuideImages={selectGuideImages}
+                                                    onGuideFrame={(id, frame) => {
+                                                        setGuideFrames((current) => current.map((guide) => guide.id === id ? { ...guide, frame } : guide))
+                                                        setGenerationJob(createIdleJob())
+                                                    }}
+                                                    onRemoveGuide={(id) => {
+                                                        setGuideFrames((current) => current.filter((guide) => guide.id !== id))
+                                                        setGuideError(null)
+                                                        setGenerationJob(createIdleJob())
+                                                    }}
                                                     generationAudioError={generationAudioError()}
                                                     generationPrompt={generationPrompt()}
                                                     generationDuration={generationDuration()}
@@ -1030,6 +1075,11 @@ interface StudioProps {
     referenceImages: File[]
     referenceAudios: File[]
     generationAudioError: string | null
+    guideFrames: GuideFrame[]
+    guideError: string | null
+    onGuideImages: (files: File[]) => void
+    onGuideFrame: (id: number, frame: number) => void
+    onRemoveGuide: (id: number) => void
     onReferenceAudios: (files: File[]) => void
     onRemoveReferenceAudio: (file: File) => void
     generationPrompt: string
@@ -1096,6 +1146,7 @@ function Studio(props: StudioProps) {
     }
     const generationCanRun = () => props.blockedReason === null
         && isPromptValid(props.generationPrompt)
+        && (!props.realConnection || areGuideFramesValid(props.guideFrames, h3FrameCountForDuration(props.generationDuration)))
         && h3FrameCountForDuration(props.generationDuration) !== null
         && !props.isGenerationRunning
     const upscaleCanRun = () => props.upscaleVideo !== null && !props.isUpscaleRunning
@@ -1276,6 +1327,45 @@ function Studio(props: StudioProps) {
                                     </div>
                                 </Show>
                             </div>
+
+                            <Show when={props.realConnection}>
+                                <div class="field-group">
+                                    <div class="field-title-row">
+                                        <div>
+                                            <label class="field-label" for="guide-images">Опорные кадры</label>
+                                            <p id="guide-images-help" class="field-help">Картинка «прибивается» к выбранному кадру: видео пройдёт через неё. Максимум {MAX_GUIDE_FRAMES}, кадр от 0 до {(h3FrameCountForDuration(props.generationDuration) ?? 1) - 1}.</p>
+                                        </div>
+                                        <span class="image-count">{props.guideFrames.length} / {MAX_GUIDE_FRAMES}</span>
+                                    </div>
+                                    <UploadSurface
+                                        id="guide-images"
+                                        title="Опорные кадры"
+                                        description="Перетащи сюда или выбери изображения"
+                                        acceptedFormats="ИЗОБРАЖЕНИЯ"
+                                        accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                                        multiple
+                                        disabled={props.isGenerationRunning || props.guideFrames.length >= MAX_GUIDE_FRAMES}
+                                        error={props.guideError}
+                                        onFiles={props.onGuideImages}
+                                    />
+                                    <Show when={props.guideFrames.length > 0}>
+                                        <div class="guide-list" aria-label="Опорные кадры">
+                                            <For each={props.guideFrames}>
+                                                {(guide, index) => (
+                                                    <GuideReference
+                                                        guide={guide}
+                                                        index={index() + 1}
+                                                        error={guideFrameError(props.guideFrames, index(), h3FrameCountForDuration(props.generationDuration))}
+                                                        disabled={props.isGenerationRunning}
+                                                        onFrame={(frame) => props.onGuideFrame(guide.id, frame)}
+                                                        onRemove={() => props.onRemoveGuide(guide.id)}
+                                                    />
+                                                )}
+                                            </For>
+                                        </div>
+                                    </Show>
+                                </div>
+                            </Show>
 
                             <div class="field-group prompt-field">
                                 <label class="field-label" for="generation-prompt">Промт</label>
@@ -1606,6 +1696,55 @@ function SelectedAudio(props: SelectedAudioProps) {
                     Убрать
                 </button>
             </div>
+        </div>
+    )
+}
+
+interface GuideReferenceProps {
+    guide: GuideFrame
+    index: number
+    error: string | null
+    disabled: boolean
+    onFrame: (frame: number) => void
+    onRemove: () => void
+}
+
+function GuideReference(props: GuideReferenceProps) {
+    const file = untrack(() => props.guide.file)
+    const previewUrl = URL.createObjectURL(file)
+    onCleanup(() => URL.revokeObjectURL(previewUrl))
+    const inputId = `guide-frame-${untrack(() => props.guide.id)}`
+
+    return (
+        <div class="guide-item">
+            <img src={previewUrl} alt={`Опорный кадр ${props.index}: ${file.name}`} loading="lazy" />
+            <div class="guide-item__fields">
+                <p class="selected-video__name" title={file.name}>{file.name}</p>
+                <label class="field-label" for={inputId}>Кадр</label>
+                <input
+                    id={inputId}
+                    class="guide-item__frame"
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={props.guide.frame}
+                    disabled={props.disabled}
+                    onInput={(event) => props.onFrame(event.currentTarget.valueAsNumber)}
+                    aria-invalid={props.error !== null}
+                />
+                <Show when={props.error}>
+                    {(message) => <p class="field-help" role="alert">{message()}</p>}
+                </Show>
+            </div>
+            <button
+                class={buttonStyles({ tone: 'quiet', size: 'small' })}
+                type="button"
+                disabled={props.disabled}
+                onClick={() => props.onRemove()}
+                aria-label={`Удалить опорный кадр ${file.name}`}
+            >
+                Убрать
+            </button>
         </div>
     )
 }

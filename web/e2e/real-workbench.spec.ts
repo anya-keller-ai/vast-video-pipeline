@@ -242,6 +242,36 @@ test('real mode sends audio references from the Pika tab', async ({ page }) => {
     expect(requests[0]).toEqual(expect.objectContaining({ mode: 'pika', resolution: 'draft', referenceAudioIds: [expect.any(String) as unknown] }))
 })
 
+test('real mode sends guide frames with their frame numbers on every H3 tab and blocks invalid frames', async ({ page }) => {
+    const requests = await mockRealApi(page)
+    await page.locator('#generation-images').setInputFiles({ name: 'reference.png', mimeType: 'image/png', buffer: PNG_FIXTURE })
+    // Guide frames are shared between the H3 tabs (like the reference images).
+    await page.getByRole('tab', { name: 'H3 Turbo' }).click()
+    await page.locator('#guide-images').setInputFiles([
+        { name: 'first.png', mimeType: 'image/png', buffer: PNG_FIXTURE },
+        { name: 'second.png', mimeType: 'image/png', buffer: PNG_FIXTURE },
+    ])
+    await expect(page.getByText('2 / 4', { exact: true })).toBeVisible()
+    await page.locator('#guide-frame-2').fill('0')
+    await expect(page.getByRole('alert').first()).toContainText('одном кадре')
+    await page.getByLabel('Промт', { exact: true }).fill('<Picture 1> stands on a table.')
+    const run = page.getByRole('button', { name: 'Сгенерировать видео', exact: true })
+    await expect(run).toBeDisabled()
+    await page.locator('#guide-frame-2').fill('60')
+    await expect(run).toBeEnabled()
+    for (const [tab, mode] of [['H3 Turbo', 'generation'], ['Pika H3 Flex', 'pika']] as const) {
+        await page.getByRole('tab', { name: tab }).click()
+        await expect(page.getByText('2 / 4', { exact: true })).toBeVisible()
+        await expect(run).toBeEnabled()
+        await run.click()
+        await expectRealOutput(page, 'generation')
+        expect(requests.at(-1)).toEqual(expect.objectContaining({
+            mode,
+            guides: [{ imageId: expect.any(String), frame: 0 }, { imageId: expect.any(String), frame: 60 }],
+        }))
+    }
+})
+
 test('real mode sends interpolation model and multiplier', async ({ page }) => {
     const requests = await mockRealApi(page)
     const video = await makePlayableWebM(page)

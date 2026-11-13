@@ -778,6 +778,36 @@ input:focus-visible,
     text-align: center;
 }
 
+.guide-list {
+    display: grid;
+    gap: 0.6rem;
+}
+
+.guide-item {
+    display: grid;
+    grid-template-columns: 5rem minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 0.75rem;
+    padding: 0.55rem;
+    border: 1px solid var(--rule);
+    background: #fffefa;
+}
+
+.guide-item img {
+    width: 5rem;
+    height: 3.6rem;
+    object-fit: cover;
+}
+
+.guide-item__fields {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.guide-item__frame {
+    width: 6rem;
+}
+
 .prompt-field {
     display: grid;
     gap: 0.5rem;

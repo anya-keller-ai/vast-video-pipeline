@@ -10,6 +10,7 @@ from aiohttp import web
 
 from .comfy import ComfyUIClient, ComfyUIError, as_string_mapping
 from .config import Settings
+from .h3_guides import GuideRequest
 from .jobs import JobManager, JobNotReadyError, JobRequestError
 from .model_bundles import ModelBundleError, ModelBundleManager
 from .readiness import ReadinessManager
@@ -218,6 +219,25 @@ def _resolution(payload: dict[str, object]) -> str:
     return value
 
 
+def _guides(payload: dict[str, object]) -> list[GuideRequest]:
+    raw = payload.get("guides", [])
+    if not isinstance(raw, list):
+        raise ValueError("guides must be an array.")
+    guides: list[GuideRequest] = []
+    for item in cast(list[object], raw):
+        entry = as_string_mapping(item)
+        image_id = None if entry is None else entry.get("imageId")
+        frame = None if entry is None else entry.get("frame")
+        if (
+            not isinstance(image_id, str)
+            or not isinstance(frame, int)
+            or isinstance(frame, bool)
+        ):
+            raise ValueError("Each guide needs a string imageId and an integer frame.")
+        guides.append(GuideRequest(image_id, frame))
+    return guides
+
+
 async def start_job(request: web.Request) -> web.Response:
     require_real(request)
     payload = as_string_mapping(cast(object, await request.json()))
@@ -264,6 +284,7 @@ async def start_job(request: web.Request) -> web.Response:
             turbo_lora,
             audio_ids,
             resolution,
+            _guides(payload),
         )
     elif mode == "pika":
         prompt = payload.get("prompt")
@@ -301,6 +322,7 @@ async def start_job(request: web.Request) -> web.Response:
             ref_image_size,
             audio_ids,
             resolution,
+            _guides(payload),
         )
     elif mode == "interpolate":
         video = payload.get("videoId")

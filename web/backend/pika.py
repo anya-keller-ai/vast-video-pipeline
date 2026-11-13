@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+from .h3_guides import GuideFrame
 from .negpip import apply_negpip
 from .workflows import (
     H3_DEFAULT_RESOLUTION,
@@ -31,6 +32,7 @@ def build_pika_ref2va_prompt(
     ref_image_size: str = "match",
     reference_audios: Sequence[str] = (),
     resolution: str = H3_DEFAULT_RESOLUTION,
+    guides: Sequence[GuideFrame] = (),
 ) -> ComfyPrompt:
     """Build the Pika H3 Flex Ref2VA graph on top of the shared H3 base graph."""
     if not reference_images and reference_video is None:
@@ -50,6 +52,7 @@ def build_pika_ref2va_prompt(
         reference_audios=reference_audios,
         resolution=resolution,
         wire_negpip=False,
+        guides=guides,
     )
     graph["6"] = _node(
         "LoraLoaderModelOnly",

@@ -78,3 +78,34 @@ export function h3GeneratedDurationSeconds(durationSeconds: number): number | nu
     const frameCount = h3FrameCountForDuration(durationSeconds)
     return frameCount === null ? null : frameCount / framesPerSecond
 }
+
+// Guide (anchor) frames. The limit mirrors web/backend/h3_guides.py.
+export const MAX_GUIDE_FRAMES = 4
+
+export interface GuideFrame {
+    id: number
+    file: File
+    frame: number
+}
+
+// Error for the guide at `index`, or null when its frame is a valid free position.
+export function guideFrameError(guides: readonly GuideFrame[], index: number, frameCount: number | null): string | null {
+    const guide = guides[index]
+    if (guide === undefined) {
+        return null
+    }
+    if (!Number.isInteger(guide.frame) || guide.frame < 0) {
+        return 'Номер кадра — целое число от 0.'
+    }
+    if (frameCount !== null && guide.frame >= frameCount) {
+        return `Кадр вне клипа: допустимо 0–${frameCount - 1}.`
+    }
+    if (guides.some((other, otherIndex) => otherIndex !== index && other.frame === guide.frame)) {
+        return 'Два опорных изображения не могут стоять на одном кадре.'
+    }
+    return null
+}
+
+export function areGuideFramesValid(guides: readonly GuideFrame[], frameCount: number | null): boolean {
+    return guides.every((_, index) => guideFrameError(guides, index, frameCount) === null)
+}

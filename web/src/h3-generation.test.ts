@@ -6,7 +6,36 @@ import {
     H3_DURATION_OPTIONS,
     h3FrameCountForDuration,
     h3GeneratedDurationSeconds,
+    areGuideFramesValid,
+    guideFrameError,
+    MAX_GUIDE_FRAMES,
 } from './h3-generation'
+import type { GuideFrame } from './h3-generation'
+
+const guide = (id: number, frame: number): GuideFrame => ({ id, frame, file: new File([''], `guide-${id}.png`, { type: 'image/png' }) })
+
+describe('guide frames', () => {
+    it('allows up to four guides, mirroring the backend limit', () => {
+        expect(MAX_GUIDE_FRAMES).toBe(4)
+    })
+
+    it('accepts distinct integer frames inside the clip', () => {
+        const guides = [guide(1, 0), guide(2, 60), guide(3, 123)]
+        expect(areGuideFramesValid(guides, 124)).toBe(true)
+        expect(areGuideFramesValid([], 124)).toBe(true)
+    })
+
+    it('rejects negative, fractional, out-of-clip and duplicate frames', () => {
+        expect(guideFrameError([guide(1, -1)], 0, 124)).not.toBeNull()
+        expect(guideFrameError([guide(1, 1.5)], 0, 124)).not.toBeNull()
+        expect(guideFrameError([guide(1, Number.NaN)], 0, 124)).not.toBeNull()
+        expect(guideFrameError([guide(1, 124)], 0, 124)).not.toBeNull()
+        const duplicates = [guide(1, 5), guide(2, 5)]
+        expect(guideFrameError(duplicates, 0, 124)).not.toBeNull()
+        expect(guideFrameError(duplicates, 1, 124)).not.toBeNull()
+        expect(areGuideFramesValid(duplicates, 124)).toBe(false)
+    })
+})
 
 describe('H3 generation duration', () => {
     it('snaps requested fractional seconds up to the native frame grid', () => {

@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TypedDict, cast
 
+from .h3_guides import GuideFrame, apply_guides
 from .models import load_model_registry
 from .negpip import apply_negpip
 
@@ -280,6 +281,7 @@ def build_h3_ref2v_prompt(
     reference_audios: Sequence[str] = (),
     resolution: str = H3_DEFAULT_RESOLUTION,
     wire_negpip: bool = True,
+    guides: Sequence[GuideFrame] = (),
 ) -> ComfyPrompt:
     if not prompt.strip():
         raise ValueError("Для генерации нужен непустой промт.")
@@ -450,6 +452,7 @@ def build_h3_ref2v_prompt(
         graph["7"]["inputs"]["ref_videos.ref_video_0"] = ["41", 0]
         graph["7"]["inputs"]["ref_video_audios.ref_video_audio_0"] = ["41", 1]
 
+    apply_guides(graph, guides, frame_count)
     # Callers that swap the model afterwards (Pika LoRA) wire NegPiP themselves.
     if wire_negpip:
         apply_negpip(graph)

@@ -5,6 +5,7 @@ import json
 import secrets
 import time
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal, cast
@@ -27,6 +28,7 @@ from .frame_interpolation import (
     INTERPOLATION_SAVE_NODE_ID,
     build_interpolation_prompt,
 )
+from .h3_guides import GuideFrame, GuideRequest
 from .media import normalize_reference_video, probe_video
 from .model_bundles import ModelBundleManager
 from .pika import PIKA_SAVE_NODE_ID, build_pika_ref2va_prompt
@@ -120,6 +122,7 @@ class JobManager:
         use_turbo_lora: bool,
         reference_audio_ids: list[str] | None = None,
         resolution: str = H3_DEFAULT_RESOLUTION,
+        guides: Sequence[GuideRequest] = (),
     ) -> dict[str, object]:
         async with self._submit_lock:
             return await self._start_generation(
@@ -130,6 +133,7 @@ class JobManager:
                 use_turbo_lora,
                 reference_audio_ids,
                 resolution,
+                guides,
             )
 
     async def _start_generation(
@@ -141,6 +145,7 @@ class JobManager:
         use_turbo_lora: bool,
         reference_audio_ids: list[str] | None = None,
         resolution: str = H3_DEFAULT_RESOLUTION,
+        guides: Sequence[GuideRequest] = (),
     ) -> dict[str, object]:
         bundle_id = "h3_turbo" if use_turbo_lora else "h3_base"
         await self._require_ready(bundle_id)
@@ -169,6 +174,14 @@ class JobManager:
                 for identifier in reference_audio_ids or []
             ]
             uploaded.extend(audios)
+            guide_files = [
+                self._get_uploaded_file(guide.image_id, "image") for guide in guides
+            ]
+            uploaded.extend(guide_files)
+            guide_frames = [
+                GuideFrame(file.filename, guide.frame)
+                for file, guide in zip(guide_files, guides, strict=True)
+            ]
             reference_video = None
             if reference_video_id is not None:
                 source_video = self._get_uploaded_file(reference_video_id, "video")
@@ -201,6 +214,7 @@ class JobManager:
                 secrets.randbits(64),
                 reference_audios=[audio.filename for audio in audios],
                 resolution=resolution,
+                guides=guide_frames,
             )
             return await self._submit(
                 job_id,
@@ -224,6 +238,7 @@ class JobManager:
         ref_image_size: str = "match",
         reference_audio_ids: list[str] | None = None,
         resolution: str = H3_DEFAULT_RESOLUTION,
+        guides: Sequence[GuideRequest] = (),
     ) -> dict[str, object]:
         async with self._submit_lock:
             return await self._start_pika_generation(
@@ -235,6 +250,7 @@ class JobManager:
                 ref_image_size,
                 reference_audio_ids,
                 resolution,
+                guides,
             )
 
     async def _start_pika_generation(
@@ -247,6 +263,7 @@ class JobManager:
         ref_image_size: str = "match",
         reference_audio_ids: list[str] | None = None,
         resolution: str = H3_DEFAULT_RESOLUTION,
+        guides: Sequence[GuideRequest] = (),
     ) -> dict[str, object]:
         bundle_id = "pika_h3_flex_ref2va"
         await self._require_ready(bundle_id)
@@ -267,6 +284,14 @@ class JobManager:
                 for identifier in reference_audio_ids or []
             ]
             uploaded.extend(audios)
+            guide_files = [
+                self._get_uploaded_file(guide.image_id, "image") for guide in guides
+            ]
+            uploaded.extend(guide_files)
+            guide_frames = [
+                GuideFrame(file.filename, guide.frame)
+                for file, guide in zip(guide_files, guides, strict=True)
+            ]
             reference_video = None
             if reference_video_id is not None:
                 source_video = self._get_uploaded_file(reference_video_id, "video")
@@ -297,6 +322,7 @@ class JobManager:
                     ref_image_size,
                     reference_audios=[audio.filename for audio in audios],
                     resolution=resolution,
+                    guides=guide_frames,
                 )
             except ValueError as error:
                 raise JobRequestError(str(error)) from error
