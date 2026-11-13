@@ -7,6 +7,8 @@ requires-python = ">=3.12"
 [tool.pytest.ini_options]
 addopts = "-q"
 pythonpath = ["."]
+# The workbench tests (web/backend) need aiohttp and run via unittest.
+testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 88
@@ -23,3 +25,8 @@ indent-style = "space"
 python_version = "3.12"
 strict = true
 warn_unused_configs = true
+
+# These modules exist only inside the ComfyUI runtime, not in CI.
+[[tool.mypy.overrides]]
+module = ["folder_paths", "torch"]
+ignore_missing_imports = true
