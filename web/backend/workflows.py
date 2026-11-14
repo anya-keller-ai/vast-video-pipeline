@@ -9,7 +9,6 @@ from typing import TypedDict, cast
 
 from .h3_guides import GuideFrame, apply_guides
 from .models import load_model_registry
-from .negpip import apply_negpip
 
 type JsonValue = (
     str | int | float | bool | None | list["JsonValue"] | dict[str, "JsonValue"]
@@ -280,7 +279,6 @@ def build_h3_ref2v_prompt(
     ref_image_size: str = "match",
     reference_audios: Sequence[str] = (),
     resolution: str = H3_DEFAULT_RESOLUTION,
-    wire_negpip: bool = True,
     guides: Sequence[GuideFrame] = (),
 ) -> ComfyPrompt:
     if not prompt.strip():
@@ -453,9 +451,6 @@ def build_h3_ref2v_prompt(
         graph["7"]["inputs"]["ref_video_audios.ref_video_audio_0"] = ["41", 1]
 
     apply_guides(graph, guides, frame_count)
-    # Callers that swap the model afterwards (Pika LoRA) wire NegPiP themselves.
-    if wire_negpip:
-        apply_negpip(graph)
     return graph
 
 

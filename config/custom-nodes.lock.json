@@ -29,21 +29,6 @@
         "flashvsr_plus_turbo",
         "flashvsr_plus_base"
       ]
-    },
-    {
-      "id": "minimax_h3_negpip",
-      "repository": "https://github.com/hako-mikan/comfyui-minimax-h3-negpip",
-      "commit": "f725718b4c597fab92cdb1fe981dfe3544a75665",
-      "license": "AGPL-3.0",
-      "provides": [
-        "ApplyMiniMaxH3NegPiP"
-      ],
-      "required_by": [],
-      "optional_for": [
-        "h3_base",
-        "h3_turbo",
-        "pika_h3_flex_ref2va"
-      ]
     }
   ]
 }

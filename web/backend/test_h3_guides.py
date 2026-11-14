@@ -3,7 +3,6 @@ from __future__ import annotations
 import unittest
 
 from .h3_guides import MAX_GUIDES, GuideFrame, validate_guides
-from .negpip import NEGPIP_NODE_ID
 from .pika import build_pika_ref2va_prompt
 from .workflows import build_h3_ref2v_prompt
 
@@ -83,21 +82,6 @@ class H3GuideGraphTests(unittest.TestCase):
                 7,
                 guides=[GuideFrame("a.png", FRAMES)],
             )
-
-    def test_guides_and_negpip_do_not_interfere(self) -> None:
-        graph = build_h3_ref2v_prompt(
-            "A scene\n(fog:-3)",
-            "job",
-            [],
-            None,
-            FRAMES / 24,
-            False,
-            7,
-            guides=GUIDES[:2],
-        )
-        self.assertEqual(graph["8"]["inputs"]["conditioning"], ["71", 0])
-        self.assertEqual(graph["8"]["inputs"]["model"], [NEGPIP_NODE_ID, 0])
-        self.assertEqual(graph["7"]["inputs"]["clip"], [NEGPIP_NODE_ID, 1])
 
 
 class PikaGuideGraphTests(unittest.TestCase):

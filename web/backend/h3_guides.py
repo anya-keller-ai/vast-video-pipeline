@@ -12,7 +12,7 @@ GUIDE_NODE_CLASS = "MiniMaxH3AddGuide"
 MAX_GUIDES = 4
 
 # Node ids: guide nodes 70+, their LoadImage inputs 80+ (ids 20-29, 40-41, 50-52
-# and 60 belong to references, reference video, audio and NegPiP).
+# belong to references, reference video and audio).
 _GUIDE_NODE_BASE_ID = 70
 _GUIDE_IMAGE_BASE_ID = 80
 

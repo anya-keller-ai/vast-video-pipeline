@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from .h3_guides import GuideFrame
-from .negpip import apply_negpip
 from .workflows import (
     H3_DEFAULT_RESOLUTION,
     ComfyPrompt,
@@ -51,7 +50,6 @@ def build_pika_ref2va_prompt(
         ref_image_size=ref_image_size,
         reference_audios=reference_audios,
         resolution=resolution,
-        wire_negpip=False,
         guides=guides,
     )
     graph["6"] = _node(
@@ -68,6 +66,4 @@ def build_pika_ref2va_prompt(
     graph[PIKA_SAVE_NODE_ID]["inputs"]["filename_prefix"] = (
         f"workbench/jobs/{job_id}/{PIKA_OUTPUT_PREFIX}"
     )
-    # After the LoRA swap, so NegPiP wraps the final model.
-    apply_negpip(graph)
     return graph
